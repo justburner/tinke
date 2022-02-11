@@ -38,6 +38,9 @@ namespace Ekona.Images
         Byte[] original;
         int startByte;
 
+        int mergeStart = 0;
+        int mergeMax = 512;
+
         protected Color[][] palette;
         ColorFormat depth;
         bool canEdit;
@@ -261,6 +264,47 @@ namespace Ekona.Images
             original = Actions.ColorToBGR555(colors.ToArray());
             startByte = 0;
         }
+        public void Merge_Palette(PaletteBase new_pal, int slot)
+        {
+            loaded = true;
+
+            // Just in case...
+            if (new_pal.Palette.Length != 1)
+			{
+                MessageBox.Show("Cannot merge more than 1 slot");
+                return;
+            }
+
+            // Convert the palette to bytes, to merge later
+            List<Color> colors = new List<Color>();
+            for (int i = 0; i < new_pal.Palette.Length; i++)
+                colors.AddRange(new_pal.Palette[i]);
+            byte[] newPal = Actions.ColorToBGR555(colors.ToArray());
+
+            // Merge it
+            int off = mergeStart;
+            for (int i = 0; i < newPal.Length; i++)
+            {
+                if (off >= original.Length) break;
+                if (i >= mergeMax) break;
+                original[off++] = newPal[i];
+            }
+
+            // Convert it to colors
+            colors.Clear();
+            colors.AddRange(Actions.BGR555ToColor(original));
+
+            // Merge colors back into the palette
+            int num_colors = (depth == ColorFormat.colors16 ? 0x10 : 0x100);
+            bool isExact = (colors.Count % num_colors == 0 ? true : false);
+            palette = new Color[(colors.Count / num_colors) + (isExact ? 0 : 1)][];
+            for (int i = 0; i < palette.Length; i++)
+            {
+                int palette_length = i * num_colors + num_colors <= colors.Count ? num_colors : colors.Count - i * num_colors;
+                palette[i] = new Color[palette_length];
+                Array.Copy(colors.ToArray(), i * num_colors, palette[i], 0, palette_length);
+            }
+        }
 
         public bool Has_DuplicatedColors(int index)
         {
@@ -277,6 +321,16 @@ namespace Ekona.Images
         {
             get { return startByte; }
             set { Change_StartByte(value); }
+        }
+        public int MergeStart
+        {
+            get { return mergeStart; }
+            set { mergeStart = value; }
+        }
+        public int MergeMax
+        {
+            get { return mergeMax; }
+            set { mergeMax = value; }
         }
         public ColorFormat Depth
         {

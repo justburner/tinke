@@ -74,14 +74,15 @@ namespace Ekona.Images
         /// </summary>
         public static Color BGR555ToColor(byte byte1, byte byte2)
         {
-            int r, b, g;
+            int r, b, g, a;
             short bgr = BitConverter.ToInt16(new Byte[] { byte1, byte2 }, 0);
 
             r = (bgr & 0x001F) * 0x08;
             g = ((bgr & 0x03E0) >> 5) * 0x08;
             b = ((bgr & 0x7C00) >> 10) * 0x08;
+            a = ((bgr & 0x8000) == 0x8000) ? 254 : 255;
 
-            return Color.FromArgb(r, g, b);
+            return Color.FromArgb(a, r, g, b);
         }
         /// <summary>
         /// Convert colors to byte with BGR555 encoding
@@ -122,8 +123,9 @@ namespace Ekona.Images
             int r = color.R / 8;
             int g = (color.G / 8) << 5;
             int b = (color.B / 8) << 10;
+            int a = (color.A == 254) ? 0x8000 : 0;
 
-            ushort bgr = (ushort)(r + g + b);
+            ushort bgr = (ushort)(r + g + b + a);
             Array.Copy(BitConverter.GetBytes(bgr), d, 2);
 
             return d;

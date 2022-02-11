@@ -80,6 +80,25 @@ namespace Ekona.Images
 
             checkDuplicated.Checked = palette.Has_DuplicatedColors(0);
         }
+        private void Refresh_Info()
+        {
+            numericPalette.Maximum = palette.NumberOfPalettes - 1;
+            label3.Text = translation[0] + (palette.NumberOfPalettes - 1).ToString();
+            checkDuplicated.Checked = palette.Has_DuplicatedColors((int)numericPalette.Value);
+            numericStartByte.Maximum = palette.Original.Length - 1;
+            comboDepth.SelectedIndex = (palette.Depth == ColorFormat.colors16 ? 0 : 1);
+
+            palette.StartByte = (int)numericStartByte.Value;
+            picPalette.Image = palette.Get_Image((int)numericPalette.Value);
+
+            if (palette.Depth == ColorFormat.colors16)
+                numFillColors.Value = 16;
+            else
+                numFillColors.Value = 256;
+
+            checkDuplicated.Checked = palette.Has_DuplicatedColors(0);
+        }
+
         private void ReadLanguage()
         {
             try
@@ -270,6 +289,7 @@ namespace Ekona.Images
                     String fileOut = pluginHost.Get_TempFile();
                     palette.Write(fileOut);
                     pluginHost.ChangeFile(palette.ID, fileOut);
+                    Refresh_Info();
                 }
                 catch (Exception ex) { MessageBox.Show("Error writing new palette:\n" + ex.Message); };
             }
@@ -291,6 +311,61 @@ namespace Ekona.Images
             Write_File();
             picPalette.Image = palette.Get_Image((int)numericPalette.Value);
             checkDuplicated.Checked = palette.Has_DuplicatedColors((int)numericPalette.Value);
+        }
+
+		private void btnMerge_Click(object sender, EventArgs e)
+		{
+            OpenFileDialog o = new OpenFileDialog();
+            o.CheckFileExists = true;
+            o.Filter = "All supported formats|*.pal;*.aco;*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon|" +
+                "Windows Palette (*.pal)|*.pal|" +
+                "Adobe COlor (*.aco)|*.aco|" +
+                "Palette from image|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon";
+            if (o.ShowDialog() != DialogResult.OK)
+                return;
+
+            string ext = Path.GetExtension(o.FileName).ToLower();
+            if (string.IsNullOrEmpty(ext) || ext.Length == 0)
+            {
+                MessageBox.Show("File without extension... Aborting");
+                return;
+            }
+
+            if (ext.Contains("."))
+                ext = ext.Substring(ext.LastIndexOf(".") + 1);
+            Console.WriteLine("File extension:" + ext);
+            PaletteBase newpal;
+
+            if (ext == "pal")
+                newpal = new Formats.PaletteWin(o.FileName);
+            else if (ext == "aco")
+                newpal = new Formats.ACO(o.FileName);
+            else
+            {
+                byte[] tiles;
+                Color[] newcol;
+                Actions.Indexed_Image((Bitmap)Image.FromFile(o.FileName), palette.Depth, out tiles, out newcol);
+                newpal = new RawPalette(newcol, palette.CanEdit, palette.Depth);
+            }
+
+            if (newpal != null)
+                palette.Merge_Palette(newpal, (int)numericPalette.Value);
+
+            // Write the file
+            Write_File();
+
+            o.Dispose();
+            o = null;
+        }
+
+		private void numericMergeStart_ValueChanged(object sender, EventArgs e)
+		{
+            palette.MergeStart = (int)numericMergeStart.Value;
+        }
+
+        private void numericMergeMax_ValueChanged(object sender, EventArgs e)
+		{
+            palette.MergeMax = (int)numericMergeMax.Value;
         }
     }
 }
