@@ -47,8 +47,6 @@ namespace DB_KAI_RPG
 			this.buttonImportTiles = new System.Windows.Forms.Button();
 			this.buttonExportTiles = new System.Windows.Forms.Button();
 			this.groupSprite = new System.Windows.Forms.GroupBox();
-			this.label4 = new System.Windows.Forms.Label();
-			this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
 			this.labelNumLayers = new System.Windows.Forms.Label();
 			this.listLayers = new System.Windows.Forms.ListBox();
 			this.contextMenuLayers = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -67,7 +65,6 @@ namespace DB_KAI_RPG
 			((System.ComponentModel.ISupportInitialize)(this.numericMaxTiles)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.numericPreviewWidth)).BeginInit();
 			this.groupSprite.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
 			this.contextMenuLayers.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.numericSprite)).BeginInit();
 			this.SuspendLayout();
@@ -266,8 +263,6 @@ namespace DB_KAI_RPG
 			// 
 			// groupSprite
 			// 
-			this.groupSprite.Controls.Add(this.label4);
-			this.groupSprite.Controls.Add(this.numericUpDown1);
 			this.groupSprite.Controls.Add(this.labelNumLayers);
 			this.groupSprite.Controls.Add(this.listLayers);
 			this.groupSprite.Controls.Add(this.labelNumSprites);
@@ -280,36 +275,14 @@ namespace DB_KAI_RPG
 			this.groupSprite.TabStop = false;
 			this.groupSprite.Text = "Sprites";
 			// 
-			// label4
-			// 
-			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(153, 213);
-			this.label4.Name = "label4";
-			this.label4.Size = new System.Drawing.Size(83, 13);
-			this.label4.TabIndex = 6;
-			this.label4.Text = "$x3 Test Adjust:";
-			// 
-			// numericUpDown1
-			// 
-			this.numericUpDown1.Location = new System.Drawing.Point(242, 211);
-			this.numericUpDown1.Minimum = new decimal(new int[] {
-            3,
-            0,
-            0,
-            -2147483648});
-			this.numericUpDown1.Name = "numericUpDown1";
-			this.numericUpDown1.Size = new System.Drawing.Size(60, 20);
-			this.numericUpDown1.TabIndex = 5;
-			this.numericUpDown1.ValueChanged += new System.EventHandler(this.numericUpDown1_ValueChanged);
-			// 
 			// labelNumLayers
 			// 
 			this.labelNumLayers.AutoSize = true;
 			this.labelNumLayers.Location = new System.Drawing.Point(154, 45);
 			this.labelNumLayers.Name = "labelNumLayers";
-			this.labelNumLayers.Size = new System.Drawing.Size(102, 26);
+			this.labelNumLayers.Size = new System.Drawing.Size(45, 13);
 			this.labelNumLayers.TabIndex = 4;
-			this.labelNumLayers.Text = "Unknown total parts\r\nUnknown flags";
+			this.labelNumLayers.Text = "No data";
 			// 
 			// listLayers
 			// 
@@ -395,7 +368,6 @@ namespace DB_KAI_RPG
 			((System.ComponentModel.ISupportInitialize)(this.numericPreviewWidth)).EndInit();
 			this.groupSprite.ResumeLayout(false);
 			this.groupSprite.PerformLayout();
-			((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
 			this.contextMenuLayers.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.numericSprite)).EndInit();
 			this.ResumeLayout(false);
@@ -425,13 +397,11 @@ namespace DB_KAI_RPG
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.ListBox listLayers;
 		private System.Windows.Forms.Label labelNumLayers;
-		private System.Windows.Forms.NumericUpDown numericUpDown1;
 		private System.Windows.Forms.PictureBox picturePalette;
 		private System.Windows.Forms.CheckBox checkMaxTiles;
 		private System.Windows.Forms.ToolTip toolTip;
 		private System.Windows.Forms.NumericUpDown numericMaxTiles;
 		private System.Windows.Forms.ContextMenuStrip contextMenuLayers;
 		private System.Windows.Forms.ToolStripMenuItem deselectToolStripMenuItem;
-		private System.Windows.Forms.Label label4;
 	}
 }

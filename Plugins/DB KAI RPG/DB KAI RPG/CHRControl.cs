@@ -81,7 +81,7 @@ namespace DB_KAI_RPG
             if (dCHR.chrFlags == 0)
                 labelDebug.Text = "";
             else
-                labelDebug.Text = string.Format("WARNING: This format is incomplete\nChr Data: ${0:X06}\nChr Size: {0} bytes", dCHR.chrDataPos, dCHR.chrData.Length);
+                labelDebug.Text = string.Format("WARNING: This format is incomplete\nData Off.: ${0:X06}\nData Size: {0} bytes", dCHR.chrDataPos, dCHR.chrData.Length);
         }
 
         public void Update_Tileset()
@@ -122,9 +122,10 @@ namespace DB_KAI_RPG
                 return;
             CHR.Sprite chrSprite = dCHR.sprites[sprite];
 
-            labelNumLayers.Text = "Character data info incomplete\n";
-            labelNumLayers.Text += string.Format("\nTotal layers: {0}\nFlags: 0x{1:X02}\nData offset: ${2:X06}\nData remain: {3}", chrSprite.layers.Count, chrSprite.flags, dCHR.chrDataPos + chrSprite.debugOffset, chrSprite.debugRemain);
+            labelNumLayers.Text = "Character data info:\n";
+            labelNumLayers.Text += string.Format("\nTotal layers: {0}\nExtended?: {1}\nFlags: 0x{2:X02}:0x{3:X02}\nData offset: ${4:X06}\nData remain: {5}", chrSprite.layers.Count, chrSprite.extended ? "yes" : "no", chrSprite.flags1, chrSprite.flags2, dCHR.chrDataPos + chrSprite.debugOffset, chrSprite.debugRemain);
             labelNumLayers.Text += string.Format("\nUnknown1: 0x{0:X02}\nUnknown2: 0x{1:X02}\nUnknown2: 0x{2:X02}\nUnknown2: 0x{3:X02}", chrSprite.unknown1, chrSprite.unknown2, chrSprite.unknown3, chrSprite.unknown4);
+            labelNumLayers.Text += "\n\nAnimation not supported.";
 
             // List all layers
             if (relistLayers)
@@ -183,21 +184,6 @@ namespace DB_KAI_RPG
         private void listLayers_SelectedIndexChanged(object sender, EventArgs e)
         {
             Update_Animation(false);
-        }
-
-        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
-        {
-            dCHR.adjust_offset = (int)numericUpDown1.Value;
-            try
-            {
-                dCHR.DecodeCharacterData();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            Update_Tileset();
-            Update_Animation(true);
         }
 
         private void buttonExportPal_Click(object sender, EventArgs e)

@@ -47,9 +47,6 @@ namespace DB_KAI_RPG
         public long chrDataPos;
         public List<Sprite> sprites;
 
-        // Debugging
-        public int adjust_offset = 0; // DEBUG
-
 		#endregion
 
 		#region [ Properties ]
@@ -63,8 +60,10 @@ namespace DB_KAI_RPG
 
 		public struct Sprite
         {
-            public byte flags;
             public List<Layer> layers;
+            public bool extended;
+
+            public byte flags1, flags2;
             public byte unknown1, unknown2;
             public byte unknown3, unknown4;
 
@@ -73,29 +72,35 @@ namespace DB_KAI_RPG
         };
         public struct Layer
         {
-            public sbyte x;
-            public sbyte y;
+            public int x;
+            public int y;
             public ushort tile;
-            public byte ctrl;
 
-            public bool VerticalFlip { get { return (ctrl & 32) == 32; } }
-            public bool HorizontalFlip { get { return (ctrl & 16) == 16; } }
+            public byte objsize;
+            public byte objshape;
+
+            public bool vflip;
+            public bool hflip;
+
+            public bool translucent;
+
+            public string datastr;
 
             public int Width
             {
                 get
                 {
-                    switch (ctrl & 0xCC)
+                    switch (objsize * 16 + objshape)
                     {
-                        case 0x40: return 2;
-                        case 0x80: return 4;
-                        case 0xC0: return 8;
-                        case 0x04: return 2;
-                        case 0x44: return 4;
-                        case 0x84: return 4;
-                        case 0xC4: return 8;
-                        case 0x88: return 2;
-                        case 0xC8: return 4;
+                        case 0x10: return 2;
+                        case 0x20: return 4;
+                        case 0x30: return 8;
+                        case 0x01: return 2;
+                        case 0x11: return 4;
+                        case 0x21: return 4;
+                        case 0x31: return 8;
+                        case 0x22: return 2;
+                        case 0x32: return 4;
                         default: return 1;
                     }
                 }
@@ -105,17 +110,17 @@ namespace DB_KAI_RPG
             {
                 get
                 {
-                    switch (ctrl & 0xCC)
+                    switch (objsize * 16 + objshape)
                     {
-                        case 0x40: return 2;
-                        case 0x80: return 4;
-                        case 0xC0: return 8;
-                        case 0x84: return 2;
-                        case 0xC4: return 4;
-                        case 0x08: return 2;
-                        case 0x48: return 4;
-                        case 0x88: return 4;
-                        case 0xC8: return 8;
+                        case 0x10: return 2;
+                        case 0x20: return 4;
+                        case 0x30: return 8;
+                        case 0x21: return 2;
+                        case 0x31: return 4;
+                        case 0x02: return 2;
+                        case 0x12: return 4;
+                        case 0x22: return 4;
+                        case 0x32: return 8;
                         default: return 1;
                     }
                 }
@@ -123,7 +128,7 @@ namespace DB_KAI_RPG
 
             public override string ToString()
             {
-                return string.Format("{2}: {0},{1} {6}{7} {4}x{5} ${3:X02}", x, y, tile, ctrl, Width * 8, Height * 8, VerticalFlip ? "V" : "-", HorizontalFlip ? "H" : "-");
+                return string.Format("{2}: {0},{1} {5}{6} {3}x{4}", x, y, tile, Width * 8, Height * 8, vflip ? "V" : "-", hflip ? "H" : "-");
             }
         };
 
@@ -227,26 +232,67 @@ namespace DB_KAI_RPG
                 {
                     br.BaseStream.Seek(animOffsetPos + offsets[i], SeekOrigin.Begin);
                     Sprite sprite = new Sprite();
-                    int numLayers = br.ReadByte();
-                    sprite.flags = br.ReadByte();
                     sprite.debugOffset = br.BaseStream.Position;
-                    sprite.layers = new List<Layer>();
-                    for (int j = 0; j < numLayers; j++)
-                    {
-                        Layer layer = new Layer();
-                        layer.x = br.ReadSByte();
-                        layer.y = br.ReadSByte();
-                        layer.tile = br.ReadByte();
-                        layer.ctrl = br.ReadByte();
-                        switch (layer.ctrl & 3)
+                    int numLayers = br.ReadByte();
+
+                    if (numLayers == 16)
+					{
+                        sprite.flags1 = br.ReadByte();
+                        sprite.flags2 = br.ReadByte();
+                        numLayers = br.ReadByte();
+
+                        sprite.extended = true;
+                        sprite.layers = new List<Layer>();
+                        for (int j = 0; j < numLayers; j++)
                         {
-                            case 0: /* normal */ break;
-                            case 1: layer.tile += 256; break;
-                            case 2: /* semi-transparent */ break;
-                            case 3: br.BaseStream.Seek(adjust_offset, SeekOrigin.Current); layer.tile += 256; break;
+                            Layer layer = new Layer();
+                            ushort halfwd0 = br.ReadUInt16();
+                            ushort halfwd1 = br.ReadUInt16();
+                            ushort halfwd2 = br.ReadUInt16();
+
+                            layer.x = ((halfwd1 & 0x800) != 0) ? (int)((halfwd1 & 0xFFF) | 0xFFFFF000) : (halfwd1 & 0x7FF);
+                            layer.y = ((halfwd0 & 0x200) != 0) ? (int)((halfwd0 & 0x3FF) | 0xFFFFFC00) : (halfwd0 & 0x1FF);
+                            layer.tile = halfwd2;
+                            layer.objsize = (byte)((halfwd1 & 0xC000) >> 14);
+                            layer.objshape = (byte)((halfwd0 & 0xC000) >> 14);
+                            layer.vflip = (halfwd1 & 0x2000) != 0;
+                            layer.hflip = (halfwd1 & 0x1000) != 0;
+                            layer.translucent = (halfwd0 & 0x0400) != 0;
+
+                            layer.datastr = string.Format("{0:X04}:{1:X04}:{2:X04}", halfwd0, halfwd1, halfwd2);
+                            sprite.layers.Add(layer);
                         }
-                        sprite.layers.Add(layer);
                     }
+                    else
+					{
+                        sprite.flags1 = br.ReadByte();
+                        sprite.flags2 = 0;
+
+                        sprite.extended = false;
+                        sprite.layers = new List<Layer>();
+                        for (int j = 0; j < numLayers; j++)
+                        {
+                            Layer layer = new Layer();
+                            sbyte byte0 = br.ReadSByte();
+                            sbyte byte1 = br.ReadSByte();
+                            byte byte2 = br.ReadByte();
+                            byte byte3 = br.ReadByte();
+
+                            layer.x = byte0;
+                            layer.y = byte1;
+                            layer.tile = byte2;
+                            layer.objsize = (byte)((byte3 & 0xC0) >> 6);
+                            layer.objshape = (byte)((byte3 & 0x0C) >> 2);
+                            layer.vflip = (byte3 & 0x20) != 0;
+                            layer.hflip = (byte3 & 0x10) != 0;
+                            layer.translucent = (byte3 & 0x02) != 0;
+                            if ((byte3 & 0x01) != 0) layer.tile += 256;
+
+                            layer.datastr = string.Format("{0:X02}:{1:X02}:{2:X02}:{3:X02}", byte0, byte1, byte2, byte3);
+                            sprite.layers.Add(layer);
+                        }
+                    }
+
                     sprite.unknown1 = br.ReadByte();
                     sprite.unknown2 = br.ReadByte();
                     sprite.unknown3 = br.ReadByte();
@@ -269,8 +315,8 @@ namespace DB_KAI_RPG
             int startID = part.tile;
             int twidth = part.Width;
             int theight = part.Height;
-            bool vflip = part.VerticalFlip;
-            bool hflip = part.HorizontalFlip;
+            bool vflip = part.vflip;
+            bool hflip = part.hflip;
             Color[] pal = palette[paletteSlot];
 
             if (!highlighted)

@@ -41,7 +41,7 @@ namespace DB_KAI_RPG
 
         public bool IsCompatible()
         {
-            return (gameCode == "BRPE");
+            return (gameCode == "BRPE") || (gameCode == "BRPP");
         }
 
         public Format Get_Format(sFile file, byte[] magic)
