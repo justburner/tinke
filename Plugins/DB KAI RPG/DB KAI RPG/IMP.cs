@@ -126,7 +126,7 @@ namespace DB_KAI_RPG
                 int index = br.ReadByte();
                 if (index < 0x10)
                 {
-                    // Straight copy
+                    // Raw copy
                     while (true)
                     {
                         texRaw[ptr++] = br.ReadByte();
@@ -173,7 +173,7 @@ namespace DB_KAI_RPG
                     }
                     if (index != 0)
                     {
-                        // Copy remaining
+                        // Copy remaining as raw copy
                         do
                         {
                             index--;
@@ -202,6 +202,21 @@ namespace DB_KAI_RPG
             return size;
 		}
 
+        protected int Encode_CheckIndex(int ptr, int len, int decIndex)
+        {
+            int tab8 = decTable[decIndex];
+            int size = 0;
+            if (tab8 >= 0) return 0;
+            while (ptr < len && (ptr + tab8) >= 0 && (ptr + tab8) < len)
+            {
+                if (texRaw[ptr] != texRaw[ptr + tab8]) break;
+                size++;
+                ptr++;
+                if (size >= 18) break;
+            }
+            return size;
+        }
+
         public void Encode()
         {
             MemoryStream st = new MemoryStream();
@@ -228,10 +243,28 @@ namespace DB_KAI_RPG
                 if (ptrB != ptrE) throw new BadImageFormatException("Internal discrepancy");
             };
 
+            // This compression algorithm is not as good as the original but does the job well.
+            // The only thing lacking is raw copy after a recall but that would require a complete overhaul.
             while (ptrE < len)
             {
+                // Check repeating byte
                 int rep = Encode_CheckRepeat(ptrE, len);
-                if (rep >= 3)
+
+                // Find best index by brute force
+                int bestIdx = 0;
+                int bestSize = 0;
+                for (int i = 0; i < 256; i++)
+                {
+                    int size = Encode_CheckIndex(ptrE, len, i);
+                    if (size > bestSize)
+                    {
+                        bestIdx = i;
+                        bestSize = size;
+                    }
+                }
+
+                // Any compression resulted >= 3 bytes gets added
+                if (rep >= 3 && rep > bestSize)
 				{
                     WriteRawData();
                     int wrep = Math.Min(rep, 258);
@@ -240,12 +273,29 @@ namespace DB_KAI_RPG
                     ptrB += wrep;
                     ptrE += wrep;
                 }
+                else if (bestSize >= 3)
+				{
+                    WriteRawData();
+                    if (bestIdx < 16 && bestSize <= 8)
+					{
+                        bw.Write((byte)(((bestSize - 1) << 4) | bestIdx));
+                    }
+                    else
+					{
+                        bw.Write((byte)(0x80 + bestSize - 3));
+                        bw.Write((byte)bestIdx);
+                    }
+                    ptrB += bestSize;
+                    ptrE += bestSize;
+                }
                 else
                 {
                     raw++;
                     ptrE++;
                 }
             }
+
+            // Tailing raw data
             WriteRawData();
 
             data = st.ToArray();

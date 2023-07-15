@@ -115,10 +115,10 @@ namespace DB_KAI_RPG
 			this.label1.AutoSize = true;
 			this.label1.Location = new System.Drawing.Point(7, 58);
 			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(163, 65);
+			this.label1.Size = new System.Drawing.Size(158, 65);
 			this.label1.TabIndex = 5;
 			this.label1.Text = "Texture import requirements:\r\n\r\nWidth must be multiple of 2.\r\nHeight must be mult" +
-    "iple of 2.\r\nWARNING: Inefficient compress.";
+    "iple of 2.\r\n256 colors matching the palette.";
 			// 
 			// buttonImportTexture
 			// 
