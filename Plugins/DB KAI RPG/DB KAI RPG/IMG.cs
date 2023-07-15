@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2022  Justburner
+ * Copyright (C) 2022-2023  Justburner
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -76,8 +76,6 @@ namespace DB_KAI_RPG
             byte[] id = br.ReadBytes(4);
             if (id[0] != 'd' || id[1] != 'I' || id[2] != 'M' || id[3] != 'G')
                 throw new BadImageFormatException("File is not dIMG format");
-
-            // DEBUG
             byte zero = br.ReadByte();
             if (zero != 0)
                 throw new BadImageFormatException("dIMG header malformed");
@@ -86,18 +84,17 @@ namespace DB_KAI_RPG
                 throw new BadImageFormatException("dIMG format malformed");
             byte widthCode = br.ReadByte();
             byte heightCode = br.ReadByte();
-            int numPal = (format == 0) ? 16 : 1;
-            int textureBytes = (widthCode * 2) * (heightCode * 2);
 
             // Palettes
+            int numPal = (format == 0) ? 16 : 1;
             palette = new Color[numPal][];
             for (int i = 0; i < numPal; i++)
                 palette[i] = Actions.BGR555ToColor(br.ReadBytes(32));
 
             // Texture
-            texRaw = br.ReadBytes(textureBytes);
             texWidth = widthCode * 4;
             texHeight = heightCode * 2;
+            texRaw = br.ReadBytes(texWidth * texHeight / 2);
 
             br.Close();
         }

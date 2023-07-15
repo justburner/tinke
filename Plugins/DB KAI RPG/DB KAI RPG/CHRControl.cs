@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2022  Justburner
+ * Copyright (C) 2022-2023  Justburner
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ namespace DB_KAI_RPG
             if (dCHR.chrFlags == 0)
                 labelDebug.Text = "";
             else
-                labelDebug.Text = string.Format("WARNING: This format is incomplete\nData Off.: ${0:X06}\nData Size: {0} bytes", dCHR.chrDataPos, dCHR.chrData.Length);
+                labelDebug.Text = string.Format("WARNING: This format is incomplete\nData Off.: ${0:X06}\nData Size: {1} bytes", dCHR.chrDataPos, dCHR.chrData.Length);
         }
 
         public void Update_Tileset()

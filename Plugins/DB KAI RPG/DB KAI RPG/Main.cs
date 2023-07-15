@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2022  Justburner
+ * Copyright (C) 2022-2023  Justburner
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -50,6 +50,8 @@ namespace DB_KAI_RPG
                 return Format.Cell;
             if (file.name.ToUpper().EndsWith(".IMG"))
                 return Format.FullImage;
+            if (file.name.ToUpper().EndsWith(".IMP"))
+                return Format.Texture;
 
             return Format.Unknown;
         }
@@ -66,6 +68,11 @@ namespace DB_KAI_RPG
                 IMG dIMG = new IMG(file.path, file.id, file.name);
                 pluginHost.Set_Object(dIMG);
             }
+            else if (file.name.ToUpper().EndsWith(".IMP"))
+            {
+                IMP dIMP = new IMP(file.path, file.id, file.name);
+                pluginHost.Set_Object(dIMP);
+            }
         }
         public Control Show_Info(sFile file)
         {
@@ -75,6 +82,8 @@ namespace DB_KAI_RPG
                 return new CHRControl(pluginHost, new CHR(file.path, file.id, file.name));
             else if (file.name.ToUpper().EndsWith(".IMG"))
                 return new IMGControl(pluginHost, new IMG(file.path, file.id, file.name));
+            else if (file.name.ToUpper().EndsWith(".IMP"))
+                return new IMPControl(pluginHost, new IMP(file.path, file.id, file.name));
 
             return new Control();
         }

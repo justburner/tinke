@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2022-2023  Justburner
+ * Copyright (C) 2023  Justburner
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -33,22 +33,22 @@ using Ekona.Images;
 
 namespace DB_KAI_RPG
 {
-    public partial class IMGControl : UserControl
+    public partial class IMPControl : UserControl
     {
         IPluginHost pluginHost;
-        IMG dIMG;
+        IMP dIMP;
 
-        public IMGControl()
+        public IMPControl()
         {
             InitializeComponent();
         }
 
-        public IMGControl(Ekona.IPluginHost pluginHost, IMG dIMG)
+        public IMPControl(Ekona.IPluginHost pluginHost, IMP dIMP)
         {
             InitializeComponent();
 
             this.pluginHost = pluginHost;
-            this.dIMG = dIMG;
+            this.dIMP = dIMP;
 
             Update_Palette();
             Update_Texture();
@@ -56,13 +56,13 @@ namespace DB_KAI_RPG
 
         private void Write_File()
         {
-            if (dIMG.ID > 0)
+            if (dIMP.ID > 0)
             {
                 try
                 {
                     String fileOut = pluginHost.Get_TempFile();
-                    dIMG.Write(fileOut);
-                    pluginHost.ChangeFile(dIMG.ID, fileOut);
+                    dIMP.Write(fileOut);
+                    pluginHost.ChangeFile(dIMP.ID, fileOut);
                 }
                 catch (Exception ex) { MessageBox.Show("Error writing new palette:\n" + ex.Message); };
             }
@@ -70,20 +70,24 @@ namespace DB_KAI_RPG
 
         public void Update_Palette()
         {
-            numericPalette.Maximum = dIMG.palette.Length - 1;
-            labelNumPalettes.Text = string.Format("of {0}", dIMG.palette.Length - 1);
-            if (numericPalette.Value < dIMG.palette.Length)
-                picturePalette.Image = Transform.Get1DPaletteBitmap(picturePalette.Width, picturePalette.Height, dIMG.palette[(int)numericPalette.Value], 16);
+            if (dIMP.palette.Length != 0)
+                picturePalette.Image = Transform.Get1DPaletteBitmap(picturePalette.Width, picturePalette.Height, dIMP.palette, 16, 16);
             else
                 picturePalette.Image = null;
         }
 
         public void Update_Texture()
         {
-            if (numericPalette.Value < dIMG.palette.Length)
-                pictureTileset.Image = Transform.Get4bppTextureBitmap(dIMG.texRaw, dIMG.texWidth, dIMG.texHeight, dIMG.palette[(int)numericPalette.Value]);
+            if (dIMP.palette.Length != 0) {
+                pictureTileset.Image = Transform.Get8bppTextureBitmap(dIMP.texRaw, dIMP.texWidth, dIMP.texHeight, dIMP.palette);
+                double ratio = (double)dIMP.texRaw.Length / (double)dIMP.data.Length;
+                labelData.Text = string.Format("Tex. Size: {0} Bytes\nData Size: {1} Bytes\nCompression Ratio: {2:0.##}", dIMP.texRaw.Length, dIMP.data.Length, ratio);
+            }
             else
+            {
                 pictureTileset.Image = null;
+                labelData.Text = "No Info";
+            }
         }
 
         private void numericPalette_ValueChanged(object sender, EventArgs e)
@@ -103,7 +107,7 @@ namespace DB_KAI_RPG
                        "Portable Network Graphics (*.png)|*.png|" +
                        "Adobe COlor (*.aco)|*.aco";
             o.OverwritePrompt = true;
-            o.FileName = Path.ChangeExtension(dIMG.FileName, null);
+            o.FileName = Path.ChangeExtension(dIMP.FileName, null);
 
             if (o.ShowDialog() != DialogResult.OK)
                 return;
@@ -118,8 +122,7 @@ namespace DB_KAI_RPG
             if (o.FilterIndex == 4)
                 format = Transform.PalFormat.ACO;
 
-            Color[] fullPal = Transform.Get1DPalette(dIMG.palette, 16);
-            Transform.ExportPalette(o.FileName, format, fullPal);
+            Transform.ExportPalette(o.FileName, format, dIMP.palette);
         }
 
         private void buttonImportPal_Click(object sender, EventArgs e)
@@ -158,8 +161,7 @@ namespace DB_KAI_RPG
                 MessageBox.Show("Invalid palette file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            dIMG.palette = palette;
-            numericPalette.Value = 0;
+            dIMP.palette = Transform.Get1DPalette(palette, 16);
 
             // Write file
             Write_File();
@@ -176,12 +178,12 @@ namespace DB_KAI_RPG
             o.DefaultExt = ".pal";
             o.Filter = "Portable Network Graphics (*.png)|*.png";
             o.OverwritePrompt = true;
-            o.FileName = Path.ChangeExtension(dIMG.FileName, ".png");
+            o.FileName = Path.ChangeExtension(dIMP.FileName, ".png");
 
             if (o.ShowDialog() != DialogResult.OK)
                 return;
 
-            Transform.Export4bppTexture(o.FileName, dIMG.texRaw, dIMG.texWidth, dIMG.texHeight, dIMG.palette[(int)numericPalette.Value]);
+            Transform.Export8bppTexture(o.FileName, dIMP.texRaw, dIMP.texWidth, dIMP.texHeight, dIMP.palette);
         }
 
         private void buttonImportTexture_Click(object sender, EventArgs e)
@@ -194,25 +196,37 @@ namespace DB_KAI_RPG
                 return;
 
             int width, height;
-            byte[] texture = Transform.Import4bppTexture(o.FileName, out width, out height, dIMG.palette[(int)numericPalette.Value]);
-            if ((width & 3) != 0)
-            {
-                MessageBox.Show("Invalid texture size: width must be multiple of 4.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+            byte[] texture = Transform.Import8bppTexture(o.FileName, out width, out height, dIMP.palette);
+            if (width >= 510 || height >= 510)
+			{
+                if ((width & 7) != 0 || (height & 7) != 0)
+                {
+                    MessageBox.Show("Invalid large texture size: must be multiple of 8.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                if ((width > 2040) || (height > 2040))
+				{
+                    MessageBox.Show("Invalid large texture size: too large.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
             }
-            if ((height & 1) != 0)
-            {
-                MessageBox.Show("Invalid texture size: height must be multiple of 2.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+            else
+			{
+                if ((width & 1) != 0 || (height & 1) != 0)
+                {
+                    MessageBox.Show("Invalid texture size: must be multiple of 2.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                if ((width > 510) || (height > 510))
+                {
+                    MessageBox.Show("Invalid texture size: too large.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
             }
-            if ((width > 510) || (height > 510))
-            {
-                MessageBox.Show("Invalid texture size: too large.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            dIMG.texRaw = texture;
-            dIMG.texWidth = width;
-            dIMG.texHeight = height;
+            dIMP.texRaw = texture;
+            dIMP.texWidth = width;
+            dIMP.texHeight = height;
+            dIMP.Encode();
 
             // Write file
             Write_File();

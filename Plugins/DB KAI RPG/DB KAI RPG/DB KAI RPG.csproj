@@ -61,6 +61,13 @@
       <DependentUpon>CHRControl.cs</DependentUpon>
     </Compile>
     <Compile Include="IMG.cs" />
+    <Compile Include="IMP.cs" />
+    <Compile Include="IMPControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IMPControl.designer.cs">
+      <DependentUpon>IMPControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Transform.cs" />
@@ -71,6 +78,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="CHRControl.resx">
       <DependentUpon>CHRControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="IMPControl.resx">
+      <DependentUpon>IMPControl.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

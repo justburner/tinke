@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2022  Justburner
+ * Copyright (C) 2022-2023  Justburner
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ namespace DB_KAI_RPG
         /// Generate a 2D palette from 1D palette
         /// </summary>
         /// <param name="palette">1D palette</param>
-        /// <param name="entriesPerSlot">entriesPerSlot</param>
+        /// <param name="entriesPerSlot">Number of entries per slot</param>
         /// <returns>2D palette</returns>
         static public Color[][] Get2DPalette(Color[] palette, int entriesPerSlot)
         {
@@ -217,29 +217,34 @@ namespace DB_KAI_RPG
         #region [ Palette Rendering ]
 
         /// <summary>
-        /// Get Bitmap from 1D Palette, single row only
+        /// Get Bitmap from 1D Palette
         /// </summary>
         /// <param name="width">Width of Bitmap</param>
         /// <param name="height">Height of Bitmap</param>
-        /// <param name="numColors">Number of colors</param>
         /// <param name="palette">Palette</param>
+        /// <param name="horzColors">Horizontal colors</param>
+        /// <param name="vertColors">Vertical colors</param>
         /// <returns>Bitmap</returns>
-        static public Bitmap Get1DPaletteBitmap(int width, int height, Color[] palette, int numColors)
+        static public Bitmap Get1DPaletteBitmap(int width, int height, Color[] palette, int horzColors, int vertColors = 1)
         {
             if (palette.Length == 0)
                 return new Bitmap(width, height);
 
             Bitmap bmp = new Bitmap(width, height);
-            float delta = (float)numColors / (float)width;
+            float deltaX = (float)horzColors / (float)width;
+            float deltaY = (float)vertColors / (float)height;
+            float indY = 0f;
             for (int y = 0; y < height; y++)
             {
-                float index = 0f;
+                float indX = 0f;
                 for (int x = 0; x < width; x++)
                 {
+                    int index = (int)indY * horzColors + (int)indX;
                     if ((int)index < palette.Length)
                         bmp.SetPixel(x, y, palette[(int)index]);
-                    index += delta;
+                    indX += deltaX;
                 }
+                indY += deltaY;
             }
 
             return bmp;
@@ -420,7 +425,7 @@ namespace DB_KAI_RPG
         static private byte[] Import4bppTextureFrom8bpp(Bitmap bmp)
         {
             // Lock bitmap
-            BitmapData bmd = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, PixelFormat.Format4bppIndexed);
+            BitmapData bmd = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
             IntPtr ptr = bmd.Scan0;
             int stride = bmd.Stride;
 
@@ -465,6 +470,79 @@ namespace DB_KAI_RPG
             return texture;
         }
 
+        static private byte[] Import8bppTextureFrom4bpp(Bitmap bmp)
+        {
+            // Lock bitmap
+            BitmapData bmd = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, PixelFormat.Format4bppIndexed);
+            IntPtr ptr = bmd.Scan0;
+            int stride = bmd.Stride;
+
+            // Convert texture
+            byte[] texture = new byte[bmp.Width * bmp.Height];
+            int offTex = 0;
+            for (int y = 0; y < bmp.Height; y++)
+            {
+                int offBmp = y * stride;
+                for (int x = 0; x < bmp.Width; x += 2)
+                {
+                    if (offTex >= texture.Length)
+                        break;
+                    byte value = Marshal.ReadByte(ptr, offBmp++);
+                    texture[offTex++] = (byte)(value & 15);
+                    texture[offTex++] = (byte)(value >> 4);
+                }
+            }
+            bmp.UnlockBits(bmd);
+
+            return texture;
+        }
+
+        static private byte[] Import8bppTextureFrom8bpp(Bitmap bmp)
+        {
+            // Lock bitmap
+            BitmapData bmd = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
+            IntPtr ptr = bmd.Scan0;
+            int stride = bmd.Stride;
+
+            // Convert texture
+            byte[] texture = new byte[bmp.Width * bmp.Height];
+            int offTex = 0;
+            for (int y = 0; y < bmp.Height; y++)
+            {
+                int offBmp = y * stride;
+                for (int x = 0; x < bmp.Width; x++)
+                {
+                    if (offTex >= texture.Length)
+                        break;
+                    byte value = Marshal.ReadByte(ptr, offBmp++);
+                    texture[offTex++] = value;
+                }
+            }
+            bmp.UnlockBits(bmd);
+
+            return texture;
+        }
+
+        static private byte[] Import8bppTextureFrom32bpp(Bitmap bmp, Color[] palette)
+        {
+            // Convert texture
+            byte[] texture = new byte[bmp.Width * bmp.Height];
+            int offTex = 0;
+            for (int y = 0; y < bmp.Height; y++)
+            {
+                for (int x = 0; x < bmp.Width; x++)
+                {
+                    if (offTex >= texture.Length)
+                        break;
+
+                    int value = FindBestColor(bmp.GetPixel(x, y), palette);
+                    texture[offTex++] = (byte)value;
+                }
+            }
+
+            return texture;
+        }
+
         static public byte[] Import4bppTextureFromImage(string fileName, out int texWidth, out int texHeight, Color[] palette)
         {
             texWidth = 0;
@@ -484,6 +562,27 @@ namespace DB_KAI_RPG
                 return Import4bppTextureFrom8bpp(bmp);
             else
                 return Import4bppTextureFrom32bpp(bmp, palette);
+        }
+
+        static public byte[] Import8bppTextureFromImage(string fileName, out int texWidth, out int texHeight, Color[] palette)
+        {
+            texWidth = 0;
+            texHeight = 0;
+            Bitmap bmp = (Bitmap)Image.FromFile(fileName, false);
+            if ((bmp.Width & 1) != 0) // Multiple of 2
+                return null;
+            if ((bmp.Width & 1) != 0) // Multiple of 2
+                return null;
+            texWidth = bmp.Width;
+            texHeight = bmp.Height;
+
+            // Replace hint palette with actual palette
+            if (bmp.PixelFormat == PixelFormat.Format4bppIndexed)
+                return Import8bppTextureFrom4bpp(bmp);
+            else if (bmp.PixelFormat == PixelFormat.Format8bppIndexed)
+                return Import8bppTextureFrom8bpp(bmp);
+            else
+                return Import8bppTextureFrom32bpp(bmp, palette);
         }
 
         #endregion
@@ -621,6 +720,48 @@ namespace DB_KAI_RPG
             return bmp;
         }
 
+        /// <summary>
+        /// Get Bitmap from 8bpp Texture
+        /// </summary>
+        /// <param name="tiles">Texture data</param>
+        /// <param name="palette">8bpp Palette</param>
+        /// <param name="columns">Tiles per row</param>
+        /// <returns>Format8bppIndexed Bitmap</returns>
+        static public Bitmap Get8bppTextureBitmap(byte[] texture, int texWidth, int texHeight, Color[] palette)
+        {
+            if (palette.Length == 0 || texture.Length == 0 || texWidth == 0 || texHeight == 0 || palette.Length < 16)
+                return new Bitmap(8, 8);
+
+            // Create bitmap and lock bits
+            Bitmap bmp = new Bitmap(texWidth, texHeight, PixelFormat.Format8bppIndexed);
+            BitmapData bmd = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
+
+            // Render all tiles
+            IntPtr ptr = bmd.Scan0;
+            int stride = bmd.Stride;
+            int offTex = 0;
+            for (int y = 0; y < texHeight; y++)
+            {
+                int offBmp = y * stride;
+                for (int x = 0; x < texWidth; x++)
+                {
+                    if (offTex >= texture.Length)
+                        break;
+                    byte value = texture[offTex++];
+                    Marshal.WriteByte(ptr, offBmp++, (byte)value);
+                }
+            }
+            bmp.UnlockBits(bmd);
+
+            // Setup palette
+            ColorPalette pal = bmp.Palette;
+            for (int i = 0; i < palette.Length; i++)
+                pal.Entries[i] = palette[i];
+            bmp.Palette = pal;
+
+            return bmp;
+        }
+
         #endregion
 
         #region [ Export / Import ]
@@ -718,14 +859,14 @@ namespace DB_KAI_RPG
 		}
 
         /// <summary>
-        /// Export Texture to a file
+        /// Export 4bpp Texture to a file
         /// </summary>
         /// <param name="fileName">File name</param>
         /// <param name="texRaw">Texture raw data</param>
         /// <param name="texWidth">Texture width</param>
         /// <param name="texHeight">Texture height</param>
         /// <param name="palette">Palette</param>
-        static public void ExportTexture(string fileName, byte[] texRaw, int texWidth, int texHeight, Color[] palette)
+        static public void Export4bppTexture(string fileName, byte[] texRaw, int texWidth, int texHeight, Color[] palette)
         {
             if (palette.Length <= 0 || texRaw.Length <= 0 || texWidth <= 0 || texHeight <= 0)
                 return;
@@ -737,15 +878,53 @@ namespace DB_KAI_RPG
         }
 
         /// <summary>
-        /// Import Tileset from a file
+        /// Export 8bpp Texture to a file
+        /// </summary>
+        /// <param name="fileName">File name</param>
+        /// <param name="texRaw">Texture raw data</param>
+        /// <param name="texWidth">Texture width</param>
+        /// <param name="texHeight">Texture height</param>
+        /// <param name="palette">Palette</param>
+        static public void Export8bppTexture(string fileName, byte[] texRaw, int texWidth, int texHeight, Color[] palette)
+        {
+            if (palette.Length <= 0 || texRaw.Length <= 0 || texWidth <= 0 || texHeight <= 0)
+                return;
+
+            // Save Tileset
+            Bitmap bmp = Transform.Get8bppTextureBitmap(texRaw, texWidth, texHeight, palette);
+            bmp.Save(fileName, System.Drawing.Imaging.ImageFormat.Png);
+            bmp.Dispose();
+        }
+
+        /// <summary>
+        /// Import 4bpp Tileset from a file
         /// </summary>
         /// <param name="fileName">File name</param>
         /// <param name="palette">Palette (Hint)</param>
         /// <param name="numHoles">[Out] Number of holes due to bad pixels</param>
         /// <returns>Tileset</returns>
-        static public byte[] ImportTexture(string fileName, out int texWidth, out int texHeight, Color[] palette)
+        static public byte[] Import4bppTexture(string fileName, out int texWidth, out int texHeight, Color[] palette)
         {
             byte[] data = Import4bppTextureFromImage(fileName, out texWidth, out texHeight, palette);
+            if (data == null)
+            {
+                data = new byte[4];
+                texWidth = 2;
+                texHeight = 2;
+            }
+            return data;
+        }
+
+        /// <summary>
+        /// Import 8bpp Tileset from a file
+        /// </summary>
+        /// <param name="fileName">File name</param>
+        /// <param name="palette">Palette (Hint)</param>
+        /// <param name="numHoles">[Out] Number of holes due to bad pixels</param>
+        /// <returns>Tileset</returns>
+        static public byte[] Import8bppTexture(string fileName, out int texWidth, out int texHeight, Color[] palette)
+        {
+            byte[] data = Import8bppTextureFromImage(fileName, out texWidth, out texHeight, palette);
             if (data == null)
             {
                 data = new byte[4];
