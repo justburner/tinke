@@ -69,6 +69,14 @@
       <DependentUpon>IMPControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Main.cs" />
+    <Compile Include="MAP.cs" />
+    <Compile Include="MAPControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MAPControl.designer.cs">
+      <DependentUpon>MAPControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PackCompress.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Transform.cs" />
   </ItemGroup>
@@ -81,6 +89,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="IMPControl.resx">
       <DependentUpon>IMPControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MAPControl.resx">
+      <DependentUpon>MAPControl.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

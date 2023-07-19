@@ -226,7 +226,7 @@ namespace DB_KAI_RPG
             dIMP.texRaw = texture;
             dIMP.texWidth = width;
             dIMP.texHeight = height;
-            dIMP.Encode();
+            dIMP.Recompress();
 
             // Write file
             Write_File();

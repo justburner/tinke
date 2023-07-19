@@ -33,7 +33,7 @@ using System.Runtime.InteropServices;
 
 namespace DB_KAI_RPG
 {
-    public class IMP
+    public class MAP
     {
         #region [ Variables ]
 
@@ -42,10 +42,13 @@ namespace DB_KAI_RPG
 
         public int texWidth;
         public int texHeight;
-        public byte[] texRaw;
+        public byte[] texImg;
+        public byte[] texMsk;
         public Color[] palette;
 
-        public byte[] data;
+        public byte[] dataImg;
+        public byte[] dataMsk;
+        public byte[] dataEx;
 
         #endregion
 
@@ -56,7 +59,7 @@ namespace DB_KAI_RPG
 
         #endregion
 
-        public IMP(string file, int id, string fileName = "")
+        public MAP(string file, int id, string fileName = "")
         {
             this.fileName = fileName;
             this.id = id;
@@ -76,42 +79,41 @@ namespace DB_KAI_RPG
 
             // Header
             byte[] id = br.ReadBytes(4);
-            if (id[0] != 'd' || id[1] != 'I' || id[2] != 'M' || id[3] != 'P')
-                throw new BadImageFormatException("File is not dIMP format");
-            byte tileSized = br.ReadByte();
-            if (tileSized != 0 && tileSized != 1)
-                throw new BadImageFormatException("dIMP header malformed");
-            byte format = br.ReadByte();
-            if (format != 1 && format != 4)
-                throw new BadImageFormatException("dIMP format malformed");
+            if (id[0] != 'd' || id[1] != 'M' || id[2] != 'A' || id[3] != 'P')
+                throw new BadImageFormatException("File is not dMAP format");
+            byte zero1 = br.ReadByte();
+            byte zero2 = br.ReadByte();
+            if (zero1 != 0 || zero2 != 0)
+                throw new BadImageFormatException("dMAP header malformed");
             byte widthCode = br.ReadByte();
             byte heightCode = br.ReadByte();
+            int mskAddr = br.ReadInt32(); //  8
+            int dataExS = br.ReadInt32(); // 12
+
+            // Read all data
+            long remain = br.BaseStream.Length - br.BaseStream.Position;
+            byte[] data = br.ReadBytes((int)remain);
+
+            // Extra data
+            if (dataExS != 0)
+                dataEx = data.Take(dataExS).ToArray();
+            else
+                dataEx = new byte[0];
 
             // Palettes
-            if (format == 4)
-			{
-                // 256 Colors
-                palette = Actions.BGR555ToColor(br.ReadBytes(512));
-            }
-            else
-			{
-                // 32 Colors !?
-                Color[] imgPal = Actions.BGR555ToColor(br.ReadBytes(64));
-                palette = new Color[256];
-                for (int i = 0; i < 256; i++) palette[i] = imgPal[i & 31];
-            }
+            palette = Actions.BGR555ToColor(data.Skip(dataExS).Take(512).ToArray());
 
-            // Texture
-            texWidth = widthCode * ((tileSized == 1) ? 8 : 2);
-            texHeight = heightCode * ((tileSized == 1) ? 8 : 2);
-            texRaw = new byte[texWidth * texHeight];
+            // Textures
+            texWidth = widthCode * 8;
+            texHeight = heightCode * 8;
+            texImg = new byte[texWidth * texHeight];
+            texMsk = new byte[texWidth * texHeight];
 
-            // Read compressed data
-            long remain = br.BaseStream.Length - br.BaseStream.Position;
-            data = br.ReadBytes((int)remain);
-
-            // Decompress data into texture
-            PackCompress.Decode(data, ref texRaw, texWidth, texHeight);
+            // Decompress images
+            int sizeImg = PackCompress.Decode(data, dataExS + 512, ref texImg, texWidth, texHeight);
+            dataImg = data.Skip(dataExS + 512).Take(sizeImg).ToArray();
+            int sizeMsk = PackCompress.Decode(data, mskAddr - 16, ref texMsk, texWidth, texHeight);
+            dataMsk = data.Skip(mskAddr - 16).Take(sizeMsk).ToArray();
 
             br.Close();
         }
@@ -120,36 +122,38 @@ namespace DB_KAI_RPG
         {
             BinaryWriter bw = new BinaryWriter(File.OpenWrite(fileOut));
 
+            uint dataExS = (uint)dataEx.Length;
+            uint imgAddr = 16U + dataExS + 512U + (uint)dataImg.Length;
+
             // Header
-            bw.Write('d'); bw.Write('I'); bw.Write('M'); bw.Write('P');
-            if (texWidth >= 510 || texHeight >= 510)
-			{
-                // Just an hack for now...
-                bw.Write((byte)1);
-                bw.Write((byte)4);
-                bw.Write((byte)(texWidth / 8));
-                bw.Write((byte)(texHeight / 8));
-            }
-            else
-			{
-                bw.Write((byte)0);
-                bw.Write((byte)4);
-                bw.Write((byte)(texWidth / 2));
-                bw.Write((byte)(texHeight / 2));
-            }
+            bw.Write('d'); bw.Write('M'); bw.Write('A'); bw.Write('P');
+            bw.Write((byte)0);
+            bw.Write((byte)0);
+            bw.Write((byte)(texWidth / 8));
+            bw.Write((byte)(texHeight / 8));
+            bw.Write(imgAddr); //  8
+            bw.Write(dataExS); // 12
+
+            // Extra data
+            bw.Write(dataEx);
 
             // Palettes
             bw.Write(Actions.ColorToBGR555(palette));
 
             // Write compressed data
-            bw.Write(data);
+            bw.Write(dataImg);
+            bw.Write(dataMsk);
 
             bw.Close();
         }
 
-        public void Recompress()
+        public void RecompressImg()
         {
-            data = PackCompress.Encode(texRaw, texWidth, texHeight);
+            dataImg = PackCompress.Encode(texImg, texWidth, texHeight);
+        }
+        public void RecompressMsk()
+        {
+            dataMsk = PackCompress.Encode(texMsk, texWidth, texHeight);
         }
     }
 }
