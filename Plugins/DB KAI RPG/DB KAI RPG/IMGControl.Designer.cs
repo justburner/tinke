@@ -39,11 +39,11 @@ namespace DB_KAI_RPG
 			this.numericPalette = new System.Windows.Forms.NumericUpDown();
 			this.pictureTileset = new System.Windows.Forms.PictureBox();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
+			this.label1 = new System.Windows.Forms.Label();
 			this.buttonImportTexture = new System.Windows.Forms.Button();
 			this.buttonExportTexture = new System.Windows.Forms.Button();
-			this.contextMenuLayers = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
-			this.label1 = new System.Windows.Forms.Label();
+			this.labelData = new System.Windows.Forms.Label();
 			this.groupBox1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.picturePalette)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.numericPalette)).BeginInit();
@@ -142,6 +142,16 @@ namespace DB_KAI_RPG
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "Texture";
 			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(7, 58);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(172, 65);
+			this.label1.TabIndex = 5;
+			this.label1.Text = "Texture import requirements:\r\n\r\nWidth must be multiple of 4.\r\nHeight must be mult" +
+    "iple of 2.\r\nPalette must be either 1 or 16 slots.";
+			// 
 			// buttonImportTexture
 			// 
 			this.buttonImportTexture.Location = new System.Drawing.Point(88, 19);
@@ -162,25 +172,20 @@ namespace DB_KAI_RPG
 			this.buttonExportTexture.UseVisualStyleBackColor = true;
 			this.buttonExportTexture.Click += new System.EventHandler(this.buttonExportTexture_Click);
 			// 
-			// contextMenuLayers
+			// labelData
 			// 
-			this.contextMenuLayers.Name = "contextMenuLayers";
-			this.contextMenuLayers.Size = new System.Drawing.Size(61, 4);
-			// 
-			// label1
-			// 
-			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(7, 58);
-			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(172, 65);
-			this.label1.TabIndex = 5;
-			this.label1.Text = "Texture import requirements:\r\n\r\nWidth must be multiple of 4.\r\nHeight must be mult" +
-    "iple of 2.\r\nPalette must be either 1 or 16 slots.";
+			this.labelData.AutoSize = true;
+			this.labelData.Location = new System.Drawing.Point(201, 378);
+			this.labelData.Name = "labelData";
+			this.labelData.Size = new System.Drawing.Size(42, 13);
+			this.labelData.TabIndex = 4;
+			this.labelData.Text = "No Info";
 			// 
 			// IMGControl
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.Controls.Add(this.labelData);
 			this.Controls.Add(this.groupBox2);
 			this.Controls.Add(this.pictureTileset);
 			this.Controls.Add(this.groupBox1);
@@ -194,6 +199,7 @@ namespace DB_KAI_RPG
 			this.groupBox2.ResumeLayout(false);
 			this.groupBox2.PerformLayout();
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 
@@ -210,7 +216,7 @@ namespace DB_KAI_RPG
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.PictureBox picturePalette;
 		private System.Windows.Forms.ToolTip toolTip;
-		private System.Windows.Forms.ContextMenuStrip contextMenuLayers;
 		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.Label labelData;
 	}
 }

@@ -77,7 +77,7 @@ namespace DB_KAI_RPG
                     dMAP.Write(fileOut);
                     pluginHost.ChangeFile(dMAP.ID, fileOut);
                 }
-                catch (Exception ex) { MessageBox.Show("Error writing new palette:\n" + ex.Message); };
+                catch (Exception ex) { MessageBox.Show("Error writing new dMAP:\n" + ex.Message); };
             }
         }
 
@@ -95,11 +95,21 @@ namespace DB_KAI_RPG
             {
                 pictureImg.Image = Transform.Get8bppTextureBitmap(dMAP.texImg, dMAP.texWidth, dMAP.texHeight, dMAP.palette);
                 pictureMsk.Image = Transform.Get8bppTextureBitmap(dMAP.texMsk, dMAP.texWidth, dMAP.texHeight, maskPalette);
+                double ratioImg = (double)dMAP.texImg.Length / (double)dMAP.dataImg.Length;
+                double ratioMsk = (double)dMAP.texMsk.Length / (double)dMAP.dataMsk.Length;
+                labelData.Text = string.Format(
+                    "Image Compression: {0} Bytes; {1:0.##} Ratio\n" +
+                    "Mask Compression: {2} Bytes; {3:0.##} Ratio\n" +
+                    "Each Texture: {4} x {5} :: {6} Bytes",
+                    dMAP.dataImg.Length, ratioImg,
+                    dMAP.dataMsk.Length, ratioMsk,
+                    dMAP.texWidth, dMAP.texHeight, dMAP.texImg.Length);
             }
             else
             {
                 pictureImg.Image = null;
                 pictureMsk.Image = null;
+                labelData.Text = "No Info";
             }
         }
 
@@ -110,99 +120,35 @@ namespace DB_KAI_RPG
 
         private void buttonExportPal_Click(object sender, EventArgs e)
         {
-            SaveFileDialog o = new SaveFileDialog();
-            o.AddExtension = true;
-            o.CheckPathExists = true;
-            o.DefaultExt = ".pal";
-            o.Filter = "Windows Palette for Gimp 2.8 (*.pal)|*.pal|" +
-                       "Windows Palette (*.pal)|*.pal|" +
-                       "Portable Network Graphics (*.png)|*.png|" +
-                       "Adobe COlor (*.aco)|*.aco";
-            o.OverwritePrompt = true;
-            o.FileName = Path.ChangeExtension(dMAP.FileName, null);
+            Transform.PalFormat format;
+            string fileName = Transform.ExportPaletteDialog(dMAP.FileName, out format);
+            if (String.IsNullOrEmpty(fileName)) return;
 
-            if (o.ShowDialog() != DialogResult.OK)
-                return;
-
-            Transform.PalFormat format = Transform.PalFormat.PNG;
-            if (o.FilterIndex == 1)
-                format = Transform.PalFormat.GimpPal;
-            if (o.FilterIndex == 2)
-                format = Transform.PalFormat.WinPal;
-            if (o.FilterIndex == 3)
-                format = Transform.PalFormat.PNG;
-            if (o.FilterIndex == 4)
-                format = Transform.PalFormat.ACO;
-
-            Transform.ExportPalette(o.FileName, format, dMAP.palette);
+            Transform.ExportPalette(fileName, format, dMAP.palette);
         }
 
         private void buttonExportMaskPal_Click(object sender, EventArgs e)
         {
-            SaveFileDialog o = new SaveFileDialog();
-            o.AddExtension = true;
-            o.CheckPathExists = true;
-            o.DefaultExt = ".pal";
-            o.Filter = "Windows Palette for Gimp 2.8 (*.pal)|*.pal|" +
-                       "Windows Palette (*.pal)|*.pal|" +
-                       "Portable Network Graphics (*.png)|*.png|" +
-                       "Adobe COlor (*.aco)|*.aco";
-            o.OverwritePrompt = true;
-            o.FileName = Path.Combine(Path.GetDirectoryName(dMAP.FileName), "MaskPalette");
+            Transform.PalFormat format;
+            string fileName = Transform.ExportPaletteDialog(Path.Combine(Path.GetDirectoryName(dMAP.FileName), "MaskPalette"), out format);
+            if (String.IsNullOrEmpty(fileName)) return;
 
-            if (o.ShowDialog() != DialogResult.OK)
-                return;
-
-            Transform.PalFormat format = Transform.PalFormat.PNG;
-            if (o.FilterIndex == 1)
-                format = Transform.PalFormat.GimpPal;
-            if (o.FilterIndex == 2)
-                format = Transform.PalFormat.WinPal;
-            if (o.FilterIndex == 3)
-                format = Transform.PalFormat.PNG;
-            if (o.FilterIndex == 4)
-                format = Transform.PalFormat.ACO;
-
-            Transform.ExportPalette(o.FileName, format, maskPalette);
+            Transform.ExportPalette(fileName, format, maskPalette);
         }
 
         private void buttonImportPal_Click(object sender, EventArgs e)
         {
-            OpenFileDialog o = new OpenFileDialog();
-            o.CheckFileExists = true;
-            o.Filter = "All supported formats|*.pal;*.aco;*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon|" +
-                "Windows Palette (*.pal)|*.pal|" +
-                "Adobe COlor (*.aco)|*.aco|" +
-                "Palette from image|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon";
-            if (o.ShowDialog() != DialogResult.OK)
-                return;
+            Transform.PalFormat format;
+            string fileName = Transform.ImportPaletteDialog(dMAP.FileName, out format);
+            if (String.IsNullOrEmpty(fileName)) return;
 
-            string ext = Path.GetExtension(o.FileName).ToLower();
-            if (string.IsNullOrEmpty(ext) || ext.Length == 0)
-            {
-                MessageBox.Show("File without extension... Aborting");
-                return;
-            }
-
-            if (ext.Contains("."))
-                ext = ext.Substring(ext.LastIndexOf(".") + 1);
-            Console.WriteLine("File extension:" + ext);
-
-            Transform.PalFormat format = Transform.PalFormat.PNG;
-            if (ext == "pal")
-                format = Transform.PalFormat.WinPal;
-            else if (ext == "aco")
-                format = Transform.PalFormat.ACO;
-            else if (ext == "png")
-                format = Transform.PalFormat.PNG;
-
-            Color[][] palette = Transform.ImportPalette(o.FileName, format);
+            Color[] palette = Transform.ImportPalette(fileName, format);
             if (palette == null)
             {
                 MessageBox.Show("Invalid palette file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            dMAP.palette = Transform.Get1DPalette(palette, 16);
+            dMAP.palette = Transform.Resize1DPalette(palette, 256);
 
             // Write file
             Write_File();
@@ -224,7 +170,7 @@ namespace DB_KAI_RPG
             if (o.ShowDialog() != DialogResult.OK)
                 return;
 
-            Transform.Export8bppTexture(o.FileName, dMAP.texImg, dMAP.texWidth, dMAP.texHeight, dMAP.palette);
+            Transform.Export8bppTexturePNG(o.FileName, dMAP.texImg, dMAP.texWidth, dMAP.texHeight, dMAP.palette);
         }
 
         private void buttonExportMask_Click(object sender, EventArgs e)
@@ -240,7 +186,7 @@ namespace DB_KAI_RPG
             if (o.ShowDialog() != DialogResult.OK)
                 return;
 
-            Transform.Export8bppTexture(o.FileName, dMAP.texMsk, dMAP.texWidth, dMAP.texHeight, maskPalette);
+            Transform.Export8bppTexturePNG(o.FileName, dMAP.texMsk, dMAP.texWidth, dMAP.texHeight, maskPalette);
         }
 
         private void buttonImportBoth_Click(object sender, EventArgs e)
@@ -260,7 +206,12 @@ namespace DB_KAI_RPG
                 return;
 
             int widthI, heightI;
-            byte[] texImg = Transform.Import8bppTexture(oI.FileName, out widthI, out heightI, dMAP.palette);
+            byte[] texImg = Transform.Import8bppTextureFromImage(oI.FileName, out widthI, out heightI, dMAP.palette);
+            if (texImg == null)
+            {
+                MessageBox.Show("Invalid image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             if ((widthI & 7) != 0 || (heightI & 7) != 0)
             {
                 MessageBox.Show("Invalid image size: must be multiple of 8.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -273,7 +224,12 @@ namespace DB_KAI_RPG
             }
 
             int widthM, heightM;
-            byte[] texMsk = Transform.Import8bppTexture(oM.FileName, out widthM, out heightM, maskPalette);
+            byte[] texMsk = Transform.Import8bppTextureFromImage(oM.FileName, out widthM, out heightM, maskPalette);
+            if (texMsk == null)
+            {
+                MessageBox.Show("Invalid mask file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             if ((widthM & 7) != 0 || (heightM & 7) != 0)
             {
                 MessageBox.Show("Invalid mask size: must be multiple of 8.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -314,7 +270,12 @@ namespace DB_KAI_RPG
                 return;
 
             int width, height;
-            byte[] texture = Transform.Import8bppTexture(o.FileName, out width, out height, dMAP.palette);
+            byte[] texture = Transform.Import8bppTextureFromImage(o.FileName, out width, out height, dMAP.palette);
+            if (texture == null)
+            {
+                MessageBox.Show("Invalid image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             if (width != dMAP.texWidth || height != dMAP.texHeight)
             {
                 MessageBox.Show("Invalid image size: must match mask resolution.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -339,7 +300,12 @@ namespace DB_KAI_RPG
                 return;
 
             int width, height;
-            byte[] texture = Transform.Import8bppTexture(o.FileName, out width, out height, maskPalette);
+            byte[] texture = Transform.Import8bppTextureFromImage(o.FileName, out width, out height, maskPalette);
+            if (texture == null)
+            {
+                MessageBox.Show("Invalid image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             if (width != dMAP.texWidth || height != dMAP.texHeight)
             {
                 MessageBox.Show("Invalid mask size: must match image resolution.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);

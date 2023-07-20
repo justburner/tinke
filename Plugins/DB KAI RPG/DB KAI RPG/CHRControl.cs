@@ -65,7 +65,7 @@ namespace DB_KAI_RPG
                     dCHR.Write(fileOut);
                     pluginHost.ChangeFile(dCHR.ID, fileOut);
                 }
-                catch (Exception ex) { MessageBox.Show("Error writing new palette:\n" + ex.Message); };
+                catch (Exception ex) { MessageBox.Show("Error writing new dCHR:\n" + ex.Message); };
             }
         }
 
@@ -188,71 +188,29 @@ namespace DB_KAI_RPG
 
         private void buttonExportPal_Click(object sender, EventArgs e)
         {
-            SaveFileDialog o = new SaveFileDialog();
-            o.AddExtension = true;
-            o.CheckPathExists = true;
-            o.DefaultExt = ".pal";
-            o.Filter = "Windows Palette for Gimp 2.8 (*.pal)|*.pal|" +
-                       "Windows Palette (*.pal)|*.pal|" +
-                       "Portable Network Graphics (*.png)|*.png|" +
-                       "Adobe COlor (*.aco)|*.aco";
-            o.OverwritePrompt = true;
-            o.FileName = Path.ChangeExtension(dCHR.FileName, null);
-
-            if (o.ShowDialog() != DialogResult.OK)
-                return;
-
-            Transform.PalFormat format = Transform.PalFormat.PNG;
-            if (o.FilterIndex == 1)
-                format = Transform.PalFormat.GimpPal;
-            if (o.FilterIndex == 2)
-                format = Transform.PalFormat.WinPal;
-            if (o.FilterIndex == 3)
-                format = Transform.PalFormat.PNG;
-            if (o.FilterIndex == 4)
-                format = Transform.PalFormat.ACO;
+            Transform.PalFormat format;
+            string fileName = Transform.ExportPaletteDialog(dCHR.FileName, out format);
+            if (String.IsNullOrEmpty(fileName)) return;
 
             Color[] fullPal = Transform.Get1DPalette(dCHR.palette, 16);
-            Transform.ExportPalette(o.FileName, format, fullPal);
+            Transform.ExportPalette(fileName, format, fullPal);
         }
 
         private void buttonImportPal_Click(object sender, EventArgs e)
         {
-            OpenFileDialog o = new OpenFileDialog();
-            o.CheckFileExists = true;
-            o.Filter = "All supported formats|*.pal;*.aco;*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon|" +
-                "Windows Palette (*.pal)|*.pal|" +
-                "Adobe COlor (*.aco)|*.aco|" +
-                "Palette from image|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon";
-            if (o.ShowDialog() != DialogResult.OK)
-                return;
+            Transform.PalFormat format;
+            string fileName = Transform.ImportPaletteDialog(dCHR.FileName, out format);
+            if (String.IsNullOrEmpty(fileName)) return;
 
-            string ext = Path.GetExtension(o.FileName).ToLower();
-            if (string.IsNullOrEmpty(ext) || ext.Length == 0)
-            {
-                MessageBox.Show("File without extension... Aborting");
-                return;
-            }
-
-            if (ext.Contains("."))
-                ext = ext.Substring(ext.LastIndexOf(".") + 1);
-            Console.WriteLine("File extension:" + ext);
-
-            Transform.PalFormat format = Transform.PalFormat.PNG;
-            if (ext == "pal")
-                format = Transform.PalFormat.WinPal;
-            else if (ext == "aco")
-                format = Transform.PalFormat.ACO;
-            else if (ext == "png")
-                format = Transform.PalFormat.PNG;
-
-            Color[][] palette = Transform.ImportPalette(o.FileName, format);
+            Color[] palette = Transform.ImportPalette(fileName, format);
             if (palette == null)
 			{
                 MessageBox.Show("Invalid palette file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            dCHR.palette = palette;
+            int slots = (palette.Length + 15) / 16;
+            palette = Transform.Resize1DPalette(palette, slots * 16);
+            dCHR.palette = Transform.Get2DPalette(palette, 16);
             numericPalette.Value = 0;
 
             // Write file
@@ -276,7 +234,7 @@ namespace DB_KAI_RPG
             if (o.ShowDialog() != DialogResult.OK)
                 return;
 
-            Transform.ExportTileset(o.FileName, dCHR.tiles, dCHR.palette[(int)numericPalette.Value], (int)numericPreviewWidth.Value);
+            Transform.ExportTilesetPNG(o.FileName, dCHR.tiles, dCHR.palette[(int)numericPalette.Value], (int)numericPreviewWidth.Value);
         }
 
         private void buttonImportTiles_Click(object sender, EventArgs e)
@@ -292,7 +250,12 @@ namespace DB_KAI_RPG
             if (!checkMaxTiles.Checked)
                 maxTiles = -1;
 
-            byte[][] tiles = Transform.ImportTileset(o.FileName, dCHR.palette[(int)numericPalette.Value], maxTiles);
+            byte[][] tiles = Transform.Import4bppTilesetFromImage(o.FileName, dCHR.palette[(int)numericPalette.Value], maxTiles);
+            if (tiles == null)
+            {
+                MessageBox.Show("Invalid tileset file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             dCHR.tiles = tiles;
 
             // Write file

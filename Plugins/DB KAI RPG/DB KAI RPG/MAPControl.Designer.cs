@@ -41,6 +41,7 @@ namespace DB_KAI_RPG
 			this.buttonImportImage = new System.Windows.Forms.Button();
 			this.buttonExportImage = new System.Windows.Forms.Button();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.buttonExportMaskPal = new System.Windows.Forms.Button();
 			this.picturePalette = new System.Windows.Forms.PictureBox();
 			this.buttonImportPal = new System.Windows.Forms.Button();
 			this.buttonExportPal = new System.Windows.Forms.Button();
@@ -48,7 +49,7 @@ namespace DB_KAI_RPG
 			this.labelExData = new System.Windows.Forms.Label();
 			this.buttonImportExData = new System.Windows.Forms.Button();
 			this.buttonExportExData = new System.Windows.Forms.Button();
-			this.buttonExportMaskPal = new System.Windows.Forms.Button();
+			this.labelData = new System.Windows.Forms.Label();
 			((System.ComponentModel.ISupportInitialize)(this.pictureMsk)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.pictureImg)).BeginInit();
 			this.groupBox2.SuspendLayout();
@@ -77,6 +78,7 @@ namespace DB_KAI_RPG
 			// 
 			// groupBox2
 			// 
+			this.groupBox2.Controls.Add(this.labelData);
 			this.groupBox2.Controls.Add(this.button1);
 			this.groupBox2.Controls.Add(this.buttonImportMask);
 			this.groupBox2.Controls.Add(this.buttonExportMask);
@@ -123,12 +125,12 @@ namespace DB_KAI_RPG
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(6, 77);
+			this.label1.Location = new System.Drawing.Point(6, 72);
 			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(158, 65);
+			this.label1.Size = new System.Drawing.Size(248, 26);
 			this.label1.TabIndex = 5;
-			this.label1.Text = "Texture import requirements:\r\n\r\nWidth must be multiple of 2.\r\nHeight must be mult" +
-    "iple of 2.\r\n256 colors matching the palette.";
+			this.label1.Text = "Texture import requirements:\r\nWidth and Height must be multiple of 8. Colors: 256" +
+    "";
 			// 
 			// buttonImportImage
 			// 
@@ -162,6 +164,16 @@ namespace DB_KAI_RPG
 			this.groupBox1.TabIndex = 3;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Palette";
+			// 
+			// buttonExportMaskPal
+			// 
+			this.buttonExportMaskPal.Location = new System.Drawing.Point(7, 190);
+			this.buttonExportMaskPal.Name = "buttonExportMaskPal";
+			this.buttonExportMaskPal.Size = new System.Drawing.Size(156, 23);
+			this.buttonExportMaskPal.TabIndex = 6;
+			this.buttonExportMaskPal.Text = "Export Mask Palette";
+			this.buttonExportMaskPal.UseVisualStyleBackColor = true;
+			this.buttonExportMaskPal.Click += new System.EventHandler(this.buttonExportMaskPal_Click);
 			// 
 			// picturePalette
 			// 
@@ -233,15 +245,14 @@ namespace DB_KAI_RPG
 			this.buttonExportExData.UseVisualStyleBackColor = true;
 			this.buttonExportExData.Click += new System.EventHandler(this.buttonExportExData_Click);
 			// 
-			// buttonExportMaskPal
+			// labelData
 			// 
-			this.buttonExportMaskPal.Location = new System.Drawing.Point(7, 190);
-			this.buttonExportMaskPal.Name = "buttonExportMaskPal";
-			this.buttonExportMaskPal.Size = new System.Drawing.Size(156, 23);
-			this.buttonExportMaskPal.TabIndex = 6;
-			this.buttonExportMaskPal.Text = "Export Mask Palette";
-			this.buttonExportMaskPal.UseVisualStyleBackColor = true;
-			this.buttonExportMaskPal.Click += new System.EventHandler(this.buttonExportMaskPal_Click);
+			this.labelData.AutoSize = true;
+			this.labelData.Location = new System.Drawing.Point(6, 104);
+			this.labelData.Name = "labelData";
+			this.labelData.Size = new System.Drawing.Size(42, 13);
+			this.labelData.TabIndex = 9;
+			this.labelData.Text = "No Info";
 			// 
 			// MAPControl
 			// 
@@ -287,5 +298,6 @@ namespace DB_KAI_RPG
 		private System.Windows.Forms.Button buttonImportExData;
 		private System.Windows.Forms.Button buttonExportExData;
 		private System.Windows.Forms.Button buttonExportMaskPal;
+		private System.Windows.Forms.Label labelData;
 	}
 }

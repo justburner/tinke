@@ -1,7 +1,7 @@
 ﻿
 namespace DB_KAI_RPG
 {
-	partial class IMPControl
+	partial class IMAControl
 	{
 		/// <summary> 
 		/// Required designer variable.
@@ -41,10 +41,25 @@ namespace DB_KAI_RPG
 			this.buttonExportTexture = new System.Windows.Forms.Button();
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.labelData = new System.Windows.Forms.Label();
+			this.contextMenuImps = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.moveUpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.moveDownToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+			this.manageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.createNewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.deleteSelectedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.groupBox3 = new System.Windows.Forms.GroupBox();
+			this.button4 = new System.Windows.Forms.Button();
+			this.button3 = new System.Windows.Forms.Button();
+			this.button2 = new System.Windows.Forms.Button();
+			this.button1 = new System.Windows.Forms.Button();
+			this.listBoxImps = new System.Windows.Forms.ListBox();
 			this.groupBox1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.picturePalette)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.pictureTileset)).BeginInit();
 			this.groupBox2.SuspendLayout();
+			this.contextMenuImps.SuspendLayout();
+			this.groupBox3.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// groupBox1
@@ -57,7 +72,7 @@ namespace DB_KAI_RPG
 			this.groupBox1.Size = new System.Drawing.Size(192, 193);
 			this.groupBox1.TabIndex = 0;
 			this.groupBox1.TabStop = false;
-			this.groupBox1.Text = "Palette";
+			this.groupBox1.Text = "Palette (Selected Image)";
 			// 
 			// picturePalette
 			// 
@@ -107,7 +122,7 @@ namespace DB_KAI_RPG
 			this.groupBox2.Size = new System.Drawing.Size(192, 131);
 			this.groupBox2.TabIndex = 1;
 			this.groupBox2.TabStop = false;
-			this.groupBox2.Text = "Texture";
+			this.groupBox2.Text = "Texture (Selected Image)";
 			// 
 			// label1
 			// 
@@ -148,21 +163,140 @@ namespace DB_KAI_RPG
 			this.labelData.TabIndex = 3;
 			this.labelData.Text = "No Info";
 			// 
-			// IMPControl
+			// contextMenuImps
+			// 
+			this.contextMenuImps.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.moveUpToolStripMenuItem,
+            this.moveDownToolStripMenuItem,
+            this.toolStripSeparator1,
+            this.manageToolStripMenuItem});
+			this.contextMenuImps.Name = "contextMenuLayers";
+			this.contextMenuImps.Size = new System.Drawing.Size(139, 76);
+			// 
+			// moveUpToolStripMenuItem
+			// 
+			this.moveUpToolStripMenuItem.Name = "moveUpToolStripMenuItem";
+			this.moveUpToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.moveUpToolStripMenuItem.Text = "Move Up";
+			this.moveUpToolStripMenuItem.Click += new System.EventHandler(this.moveUpToolStripMenuItem_Click);
+			// 
+			// moveDownToolStripMenuItem
+			// 
+			this.moveDownToolStripMenuItem.Name = "moveDownToolStripMenuItem";
+			this.moveDownToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.moveDownToolStripMenuItem.Text = "Move Down";
+			this.moveDownToolStripMenuItem.Click += new System.EventHandler(this.moveDownToolStripMenuItem_Click);
+			// 
+			// toolStripSeparator1
+			// 
+			this.toolStripSeparator1.Name = "toolStripSeparator1";
+			this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
+			// 
+			// manageToolStripMenuItem
+			// 
+			this.manageToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.createNewToolStripMenuItem,
+            this.deleteSelectedToolStripMenuItem});
+			this.manageToolStripMenuItem.Name = "manageToolStripMenuItem";
+			this.manageToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.manageToolStripMenuItem.Text = "Manage";
+			// 
+			// createNewToolStripMenuItem
+			// 
+			this.createNewToolStripMenuItem.Name = "createNewToolStripMenuItem";
+			this.createNewToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.createNewToolStripMenuItem.Text = "Create New";
+			this.createNewToolStripMenuItem.Click += new System.EventHandler(this.createNewToolStripMenuItem_Click);
+			// 
+			// deleteSelectedToolStripMenuItem
+			// 
+			this.deleteSelectedToolStripMenuItem.Name = "deleteSelectedToolStripMenuItem";
+			this.deleteSelectedToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.deleteSelectedToolStripMenuItem.Text = "Delete Selected";
+			this.deleteSelectedToolStripMenuItem.Click += new System.EventHandler(this.deleteSelectedToolStripMenuItem_Click);
+			// 
+			// groupBox3
+			// 
+			this.groupBox3.Controls.Add(this.button4);
+			this.groupBox3.Controls.Add(this.button3);
+			this.groupBox3.Controls.Add(this.button2);
+			this.groupBox3.Controls.Add(this.button1);
+			this.groupBox3.Controls.Add(this.listBoxImps);
+			this.groupBox3.Location = new System.Drawing.Point(264, 3);
+			this.groupBox3.Name = "groupBox3";
+			this.groupBox3.Size = new System.Drawing.Size(245, 255);
+			this.groupBox3.TabIndex = 9;
+			this.groupBox3.TabStop = false;
+			this.groupBox3.Text = "Images Archive";
+			// 
+			// button4
+			// 
+			this.button4.Location = new System.Drawing.Point(139, 226);
+			this.button4.Name = "button4";
+			this.button4.Size = new System.Drawing.Size(100, 23);
+			this.button4.TabIndex = 13;
+			this.button4.Text = "Delete Selected";
+			this.button4.UseVisualStyleBackColor = true;
+			this.button4.Click += new System.EventHandler(this.deleteSelectedToolStripMenuItem_Click);
+			// 
+			// button3
+			// 
+			this.button3.Location = new System.Drawing.Point(139, 200);
+			this.button3.Name = "button3";
+			this.button3.Size = new System.Drawing.Size(100, 23);
+			this.button3.TabIndex = 12;
+			this.button3.Text = "Create New";
+			this.button3.UseVisualStyleBackColor = true;
+			this.button3.Click += new System.EventHandler(this.createNewToolStripMenuItem_Click);
+			// 
+			// button2
+			// 
+			this.button2.Location = new System.Drawing.Point(6, 226);
+			this.button2.Name = "button2";
+			this.button2.Size = new System.Drawing.Size(100, 23);
+			this.button2.TabIndex = 11;
+			this.button2.Text = "Move Down";
+			this.button2.UseVisualStyleBackColor = true;
+			this.button2.Click += new System.EventHandler(this.moveDownToolStripMenuItem_Click);
+			// 
+			// button1
+			// 
+			this.button1.Location = new System.Drawing.Point(6, 200);
+			this.button1.Name = "button1";
+			this.button1.Size = new System.Drawing.Size(100, 23);
+			this.button1.TabIndex = 10;
+			this.button1.Text = "Move Up";
+			this.button1.UseVisualStyleBackColor = true;
+			this.button1.Click += new System.EventHandler(this.moveUpToolStripMenuItem_Click);
+			// 
+			// listBoxImps
+			// 
+			this.listBoxImps.ContextMenuStrip = this.contextMenuImps;
+			this.listBoxImps.FormattingEnabled = true;
+			this.listBoxImps.Location = new System.Drawing.Point(6, 19);
+			this.listBoxImps.Name = "listBoxImps";
+			this.listBoxImps.Size = new System.Drawing.Size(233, 173);
+			this.listBoxImps.TabIndex = 9;
+			this.listBoxImps.SelectedIndexChanged += new System.EventHandler(this.listBoxImps_SelectedIndexChanged);
+			// 
+			// IMAControl
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.Controls.Add(this.groupBox3);
 			this.Controls.Add(this.labelData);
 			this.Controls.Add(this.groupBox2);
 			this.Controls.Add(this.pictureTileset);
 			this.Controls.Add(this.groupBox1);
-			this.Name = "IMPControl";
+			this.Name = "IMAControl";
 			this.Size = new System.Drawing.Size(512, 512);
 			this.groupBox1.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.picturePalette)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.pictureTileset)).EndInit();
 			this.groupBox2.ResumeLayout(false);
 			this.groupBox2.PerformLayout();
+			this.contextMenuImps.ResumeLayout(false);
+			this.groupBox3.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -180,5 +314,18 @@ namespace DB_KAI_RPG
 		private System.Windows.Forms.ToolTip toolTip;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label labelData;
+		private System.Windows.Forms.ContextMenuStrip contextMenuImps;
+		private System.Windows.Forms.ToolStripMenuItem moveUpToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem moveDownToolStripMenuItem;
+		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+		private System.Windows.Forms.ToolStripMenuItem manageToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem createNewToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem deleteSelectedToolStripMenuItem;
+		private System.Windows.Forms.GroupBox groupBox3;
+		private System.Windows.Forms.Button button4;
+		private System.Windows.Forms.Button button3;
+		private System.Windows.Forms.Button button2;
+		private System.Windows.Forms.Button button1;
+		private System.Windows.Forms.ListBox listBoxImps;
 	}
 }

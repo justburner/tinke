@@ -52,6 +52,8 @@ namespace DB_KAI_RPG
                 return Format.FullImage;
             if (file.name.ToUpper().EndsWith(".IMP"))
                 return Format.Texture;
+            if (file.name.ToUpper().EndsWith(".IMA"))
+                return Format.Pack;
             if (file.name.ToUpper().EndsWith(".MAP"))
                 return Format.Map;
 
@@ -75,6 +77,11 @@ namespace DB_KAI_RPG
                 IMP dIMP = new IMP(file.path, file.id, file.name);
                 pluginHost.Set_Object(dIMP);
             }
+            else if (file.name.ToUpper().EndsWith(".IMA"))
+            {
+                IMA dIMA = new IMA(file.path, file.id, file.name);
+                pluginHost.Set_Object(dIMA);
+            }
             else if (file.name.ToUpper().EndsWith(".MAP"))
             {
                 MAP dMAP = new MAP(file.path, file.id, file.name);
@@ -91,6 +98,8 @@ namespace DB_KAI_RPG
                 return new IMGControl(pluginHost, new IMG(file.path, file.id, file.name));
             else if (file.name.ToUpper().EndsWith(".IMP"))
                 return new IMPControl(pluginHost, new IMP(file.path, file.id, file.name));
+            else if (file.name.ToUpper().EndsWith(".IMA"))
+                return new IMAControl(pluginHost, new IMA(file.path, file.id, file.name));
             else if (file.name.ToUpper().EndsWith(".MAP"))
                 return new MAPControl(pluginHost, new MAP(file.path, file.id, file.name));
 

@@ -21,21 +21,25 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using Ekona.Images;
 using Ekona.Images.Formats;
 
 namespace DB_KAI_RPG
 {
-	static class Transform
-	{
-        public enum PalFormat: int
+    static class Transform
+    {
+        public enum PalFormat : int
         {
+            Cancel = 0,
             WinPal = 1,
-            GimpPal = 2,
+            Gimp = 2,
             PNG = 3,
             ACO = 4
         };
@@ -74,15 +78,18 @@ namespace DB_KAI_RPG
         /// <param name="entriesPerSlot">Number of entries per slot</param>
         /// <returns>1D palette</returns>
         static public Color[] Get1DPalette(Color[][] palette, int entriesPerSlot)
-		{
+        {
             // Create full palette
             Color[] outPal = new Color[entriesPerSlot * palette.Length];
             for (int y = 0; y < palette.Length; y++)
             {
                 for (int x = 0; x < entriesPerSlot; x++)
                 {
+                    int index = y * entriesPerSlot + x;
                     if (x < palette[y].Length)
-                        outPal[y * entriesPerSlot + x] = palette[y][x];
+                        outPal[index] = palette[y][x];
+                    else
+                        outPal[index] = Color.Black;
                 }
             }
             return outPal;
@@ -108,10 +115,44 @@ namespace DB_KAI_RPG
                     int index = y * entriesPerSlot + x;
                     if (index < palette.Length)
                         outPal[y][x] = palette[index];
+                    else
+                        outPal[y][x] = Color.Black;
                 }
             }
             return outPal;
         }
+
+        /// <summary>
+        /// Resize 1D palette to a specific number of colors
+        /// </summary>
+        /// <param name="palette">Palette</param>
+        /// <param name="numColors">Number of colors</param>
+        /// <returns>New palette</returns>
+        static public Color[] Resize1DPalette(Color[] palette, int numColors)
+        {
+            if (palette == null)
+            {
+                Color[] blackPal = new Color[numColors];
+                for (int i = 0; i < numColors; i++) blackPal[i] = Color.Black;
+                return blackPal;
+            }
+
+            if (palette.Length == numColors) return palette;
+
+            Color[] pal = new Color[numColors];
+            for (int i = 0; i < numColors; i++)
+            {
+                if (i < palette.Length)
+                    pal[i] = palette[i];
+                else
+                    pal[i] = Color.Black;
+            }
+            return pal;
+        }
+
+        #endregion
+
+        #region [ Palette IO Formats ]
 
         /// <summary>
         /// Export palette in 32-bits PNG format
@@ -148,7 +189,7 @@ namespace DB_KAI_RPG
         /// <param name="fileName">Output filename</param>
         /// <param name="palette">Palette to export</param>
         static public void ExportPalettePNG8(string fileName, Color[] palette)
-		{
+        {
             int palWidth = palette.Length % 16;
             int palHeight = (palette.Length + 15) / 16;
             if (palWidth == 0)
@@ -186,30 +227,81 @@ namespace DB_KAI_RPG
         /// Import palette from PNG, must have 16 entries per row
         /// </summary>
         /// <param name="fileName">PNG filename</param>
-        /// <returns>2D Palette or null on error</returns>
-        static public Color[][] ImportPalettePNG(string fileName)
-		{
+        /// <returns>Palette or null on error</returns>
+        static public Color[] ImportPalettePNG(string fileName)
+        {
             Bitmap bmp = (Bitmap)Image.FromFile(fileName);
-            
+
             int entrySize = bmp.Width / 16;
             int slots = bmp.Height / Math.Max(entrySize, 1);
             if (entrySize < 1 || slots < 1 || entrySize * 16 != bmp.Width)
                 return null;
 
-            Color[][] newpal = new Color[slots][];
+            Color[] newpal = new Color[slots * 16];
             int srcY = entrySize / 2; // Sample center
             for (int y = 0; y < slots; y++)
             {
                 int srcX = entrySize / 2; // Sample center
-                newpal[y] = new Color[16];
                 for (int x = 0; x < 16; x++)
                 {
-                    newpal[y][x] = Color.FromArgb((int)(bmp.GetPixel(srcX, srcY).ToArgb() | 0xFF000000));
+                    int index = y * 16 + x;
+                    newpal[index] = Color.FromArgb((int)(bmp.GetPixel(srcX, srcY).ToArgb() | 0xFF000000));
                     srcX += entrySize;
                 }
                 srcY += entrySize;
             }
+
+            bmp.Dispose();
             return newpal;
+        }
+
+        /// <summary>
+        /// Export palette in GIMP format
+        /// </summary>
+        /// <param name="fileName">Output filename</param>
+        /// <param name="palette">Palette to export</param>
+        static public void ExportPaletteGIMP(string fileName, Color[] palette)
+        {
+            StreamWriter sw = new StreamWriter(fileName);
+            sw.WriteLine("GIMP Palette");
+            sw.WriteLine("#");
+            for (int i = 0; i < palette.Length; i++)
+            {
+                string name;
+                if (i == 0)
+                    name = "Transparency";
+                else
+                    name = string.Format("Index{0}", i);
+                sw.WriteLine(string.Format("{0,3} {1,3} {2,3}   {3}", palette[i].R, palette[i].G, palette[i].B, name));
+            }
+            sw.Close();
+        }
+
+        /// <summary>
+        /// Import palette in GIMP format
+        /// </summary>
+        /// <param name="fileName">GIMP file</param>
+        /// <returns>Palette or null on error</returns>
+        static public Color[] ImportPaletteGIMP(string fileName)
+        {
+            List<Color> colors = new List<Color>();
+
+            // Use regex to decode
+            Regex rgbregex = new Regex("^[\t ]*([0-9]+)[\t ]+([0-9]+)[\t ]+([0-9]+)");
+            foreach (string line in File.ReadLines(fileName))
+            {
+                var match = rgbregex.Match(line);
+                if (match.Success)
+				{
+                    int r, g, b;
+                    if (int.TryParse(match.Groups[1].Value, out r) &&
+                        int.TryParse(match.Groups[2].Value, out g) &&
+                        int.TryParse(match.Groups[3].Value, out b))
+                        colors.Add(Color.FromArgb(r, g, b));
+                }
+            }
+
+            return colors.ToArray();
         }
 
         #endregion
@@ -255,7 +347,7 @@ namespace DB_KAI_RPG
         #region [ Tiles Import ]
 
         static private byte[][] Import4bppTilesetFrom4bpp(Bitmap bmp, int maxTiles)
-		{
+        {
             // Write data
             BitmapData bmd = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, PixelFormat.Format4bppIndexed);
             IntPtr ptr = bmd.Scan0;
@@ -326,8 +418,8 @@ namespace DB_KAI_RPG
                         int offsetY = ty * 8 + y;
                         for (int x = 0; x < 4; x++)
                         {
-                            byte valueH = Marshal.ReadByte(ptr, offsetY * stride + offsetX++);
                             byte valueL = Marshal.ReadByte(ptr, offsetY * stride + offsetX++);
+                            byte valueH = Marshal.ReadByte(ptr, offsetY * stride + offsetX++);
                             tile[y * 4 + x] = (byte)(((valueH & 15) << 4) | (valueL & 15));
                         }
                     }
@@ -374,21 +466,6 @@ namespace DB_KAI_RPG
             }
 
             return tiles;
-        }
-
-        static public byte[][] Import4bppTilesetFromImage(string fileName, Color[] palette, int maxTiles)
-        {
-            Bitmap bmp = (Bitmap)Image.FromFile(fileName, false);
-            if (((bmp.Width | bmp.Height) & 7) != 0)
-                return null;
-
-            // Replace hint palette with actual palette
-            if (bmp.PixelFormat == PixelFormat.Format4bppIndexed)
-                return Import4bppTilesetFrom4bpp(bmp, maxTiles);
-            else if (bmp.PixelFormat == PixelFormat.Format8bppIndexed)
-                return Import4bppTilesetFrom8bpp(bmp, maxTiles);
-            else
-                return Import4bppTilesetFrom32bpp(bmp, palette, maxTiles);
         }
 
         #endregion
@@ -541,48 +618,6 @@ namespace DB_KAI_RPG
             }
 
             return texture;
-        }
-
-        static public byte[] Import4bppTextureFromImage(string fileName, out int texWidth, out int texHeight, Color[] palette)
-        {
-            texWidth = 0;
-            texHeight = 0;
-            Bitmap bmp = (Bitmap)Image.FromFile(fileName, false);
-            if ((bmp.Width & 3) != 0) // Multiple of 4
-                return null;
-            if ((bmp.Width & 1) != 0) // Multiple of 2
-                return null;
-            texWidth = bmp.Width;
-            texHeight = bmp.Height;
-
-            // Replace hint palette with actual palette
-            if (bmp.PixelFormat == PixelFormat.Format4bppIndexed)
-                return Import4bppTextureFrom4bpp(bmp);
-            else if (bmp.PixelFormat == PixelFormat.Format8bppIndexed)
-                return Import4bppTextureFrom8bpp(bmp);
-            else
-                return Import4bppTextureFrom32bpp(bmp, palette);
-        }
-
-        static public byte[] Import8bppTextureFromImage(string fileName, out int texWidth, out int texHeight, Color[] palette)
-        {
-            texWidth = 0;
-            texHeight = 0;
-            Bitmap bmp = (Bitmap)Image.FromFile(fileName, false);
-            if ((bmp.Width & 1) != 0) // Multiple of 2
-                return null;
-            if ((bmp.Width & 1) != 0) // Multiple of 2
-                return null;
-            texWidth = bmp.Width;
-            texHeight = bmp.Height;
-
-            // Replace hint palette with actual palette
-            if (bmp.PixelFormat == PixelFormat.Format4bppIndexed)
-                return Import8bppTextureFrom4bpp(bmp);
-            else if (bmp.PixelFormat == PixelFormat.Format8bppIndexed)
-                return Import8bppTextureFrom8bpp(bmp);
-            else
-                return Import8bppTextureFrom32bpp(bmp, palette);
         }
 
         #endregion
@@ -767,6 +802,86 @@ namespace DB_KAI_RPG
         #region [ Export / Import ]
 
         /// <summary>
+        /// Export palette dialog
+        /// </summary>
+        /// <param name="fileName">Expected filename</param>
+        /// <param name="format">[Out] Palette format</param>
+        /// <returns>Filename choosen or string.Empty if canceled</returns>
+        static public string ExportPaletteDialog(string fileName, out PalFormat format)
+        {
+            format = PalFormat.Cancel;
+
+            SaveFileDialog o = new SaveFileDialog();
+            o.AddExtension = true;
+            o.CheckPathExists = true;
+            o.DefaultExt = ".pal";
+            o.Filter = "Windows Palette (*.pal)|*.pal|" +
+                       "Gimp Palette (*.gpl)|*.gpl|" +
+                       "Portable Network Graphics (*.png)|*.png|" +
+                       "Adobe COlor (*.aco)|*.aco";
+            o.OverwritePrompt = true;
+            o.FileName = Path.ChangeExtension(fileName, null);
+
+            if (o.ShowDialog() != DialogResult.OK)
+                return string.Empty;
+
+            format = PalFormat.PNG;
+            if (o.FilterIndex == 1)
+                format = PalFormat.WinPal;
+            if (o.FilterIndex == 2)
+                format = PalFormat.Gimp;
+            if (o.FilterIndex == 3)
+                format = PalFormat.PNG;
+            if (o.FilterIndex == 4)
+                format = PalFormat.ACO;
+
+            return o.FileName;
+        }
+
+        /// <summary>
+        /// Import palette dialog
+        /// </summary>
+        /// <param name="fileName">Expected filename</param>
+        /// <param name="format">[Out] Palette format</param>
+        /// <returns>Filename choosen or string.Empty if canceled</returns>
+        static public string ImportPaletteDialog(string fileName, out PalFormat format)
+        {
+            format = PalFormat.Cancel;
+
+            OpenFileDialog o = new OpenFileDialog();
+            o.CheckFileExists = true;
+            o.Filter = "All supported formats|*.pal;*.gpl;*.aco;*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon|" +
+                "Windows Palette (*.pal)|*.pal|" +
+                "Gimp Palette (*.gpl)|*.gpl|" +
+                "Adobe COlor (*.aco)|*.aco|" +
+                "Palette from image|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon";
+            if (o.ShowDialog() != DialogResult.OK)
+                return string.Empty;
+
+            string ext = Path.GetExtension(o.FileName).ToLower();
+            if (string.IsNullOrEmpty(ext) || ext.Length == 0)
+            {
+                MessageBox.Show("File without extension... Aborting");
+                return string.Empty;
+            }
+
+            if (ext.Contains("."))
+                ext = ext.Substring(ext.LastIndexOf(".") + 1);
+
+            format = PalFormat.PNG;
+            if (ext == "pal")
+                format = PalFormat.WinPal;
+            else if (ext == "gpl")
+                format = PalFormat.Gimp;
+            else if (ext == "aco")
+                format = PalFormat.ACO;
+            else if (ext == "png")
+                format = PalFormat.PNG;
+
+            return o.FileName;
+        }
+
+        /// <summary>
         /// Export palette to a file
         /// </summary>
         /// <param name="fileName">File name</param>
@@ -777,12 +892,16 @@ namespace DB_KAI_RPG
             if (palette.Length <= 0)
                 return;
 
-            if (format == PalFormat.WinPal || format == PalFormat.GimpPal)
+            if (format == PalFormat.WinPal)
             {
                 PaletteWin palwin = new PaletteWin(palette);
-                if (format == PalFormat.GimpPal) palwin.Gimp_Error = true;
+                palwin.Gimp_Error = false;
                 palwin.Write(fileName);
             }
+            else if (format == PalFormat.Gimp)
+			{
+                ExportPaletteGIMP(fileName, palette);
+			}
             else if (format == PalFormat.ACO)
             {
                 ACO palaco = new ACO(palette);
@@ -803,17 +922,25 @@ namespace DB_KAI_RPG
         /// <param name="fileName">File name</param>
         /// <param name="format">Format of the file</param>
         /// <returns>Imported palette or null on error</returns>
-        static public Color[][] ImportPalette(string fileName, PalFormat format)
+        static public Color[] ImportPalette(string fileName, PalFormat format)
         {
-            if (format == PalFormat.WinPal || format == PalFormat.GimpPal)
+            if (format == PalFormat.WinPal)
             {
                 PaletteBase newpal = new PaletteWin(fileName);
-                return newpal.Palette;
+                // Seems to always imports a 1D palette at first slot
+                if (newpal == null || newpal.Palette == null) return null;
+                return newpal.Palette[0];
+            }
+            else if (format == PalFormat.Gimp)
+			{
+                return ImportPaletteGIMP(fileName);
             }
             else if (format == PalFormat.ACO)
             {
                 PaletteBase newpal = new ACO(fileName);
-                return newpal.Palette;
+                // Seems to be broken?
+                if (newpal == null || newpal.Palette == null) return null;
+                return newpal.Palette[0];
             }
             else if (format == PalFormat.PNG)
             {
@@ -823,13 +950,13 @@ namespace DB_KAI_RPG
         }
 
         /// <summary>
-        /// Export Tileset to a file
+        /// Export Tileset to a PNG file
         /// </summary>
         /// <param name="fileName">File name</param>
         /// <param name="tiles">Tiles to export</param>
         /// <param name="palette">Palette</param>
         /// <param name="columns">Tiles per row</param>
-        static public void ExportTileset(string fileName, byte[][] tiles, Color[] palette, int columns)
+        static public void ExportTilesetPNG(string fileName, byte[][] tiles, Color[] palette, int columns)
         {
             if (palette.Length <= 0 || tiles.Length <= 0)
                 return;
@@ -847,26 +974,34 @@ namespace DB_KAI_RPG
         /// <param name="palette">Palette (Hint)</param>
         /// <param name="numHoles">[Out] Number of holes due to bad pixels</param>
         /// <returns>Tileset</returns>
-        static public byte[][] ImportTileset(string fileName, Color[] palette, int maxTiles)
+        static public byte[][] Import4bppTilesetFromImage(string fileName, Color[] palette, int maxTiles)
         {
-            byte[][] tiles = Import4bppTilesetFromImage(fileName, palette, maxTiles);
-            if (tiles == null)
-			{
-                tiles = new byte[1][];
-                tiles[0] = new byte[32];
-            }
-            return tiles;
-		}
+            Bitmap bmp = (Bitmap)Image.FromFile(fileName, false);
+            if (((bmp.Width | bmp.Height) & 7) != 0)
+                return null;
+
+            // Replace hint palette with actual palette
+            byte[][] img = null;
+            if (bmp.PixelFormat == PixelFormat.Format4bppIndexed)
+                img = Import4bppTilesetFrom4bpp(bmp, maxTiles);
+            else if (bmp.PixelFormat == PixelFormat.Format8bppIndexed)
+                img = Import4bppTilesetFrom8bpp(bmp, maxTiles);
+            else
+                img = Import4bppTilesetFrom32bpp(bmp, palette, maxTiles);
+
+            bmp.Dispose();
+            return img;
+        }
 
         /// <summary>
-        /// Export 4bpp Texture to a file
+        /// Export 4bpp Texture to a PNG file
         /// </summary>
         /// <param name="fileName">File name</param>
         /// <param name="texRaw">Texture raw data</param>
         /// <param name="texWidth">Texture width</param>
         /// <param name="texHeight">Texture height</param>
         /// <param name="palette">Palette</param>
-        static public void Export4bppTexture(string fileName, byte[] texRaw, int texWidth, int texHeight, Color[] palette)
+        static public void Export4bppTexturePNG(string fileName, byte[] texRaw, int texWidth, int texHeight, Color[] palette)
         {
             if (palette.Length <= 0 || texRaw.Length <= 0 || texWidth <= 0 || texHeight <= 0)
                 return;
@@ -885,7 +1020,7 @@ namespace DB_KAI_RPG
         /// <param name="texWidth">Texture width</param>
         /// <param name="texHeight">Texture height</param>
         /// <param name="palette">Palette</param>
-        static public void Export8bppTexture(string fileName, byte[] texRaw, int texWidth, int texHeight, Color[] palette)
+        static public void Export8bppTexturePNG(string fileName, byte[] texRaw, int texWidth, int texHeight, Color[] palette)
         {
             if (palette.Length <= 0 || texRaw.Length <= 0 || texWidth <= 0 || texHeight <= 0)
                 return;
@@ -897,41 +1032,65 @@ namespace DB_KAI_RPG
         }
 
         /// <summary>
-        /// Import 4bpp Tileset from a file
+        /// Import 4bpp Texture from a file
         /// </summary>
         /// <param name="fileName">File name</param>
+        /// <param name="texWidth">[Out] Texture width</param>
+        /// <param name="texHeight">[Out] Texture height</param>
         /// <param name="palette">Palette (Hint)</param>
-        /// <param name="numHoles">[Out] Number of holes due to bad pixels</param>
-        /// <returns>Tileset</returns>
-        static public byte[] Import4bppTexture(string fileName, out int texWidth, out int texHeight, Color[] palette)
+        /// <returns></returns>
+        static public byte[] Import4bppTextureFromImage(string fileName, out int texWidth, out int texHeight, Color[] palette)
         {
-            byte[] data = Import4bppTextureFromImage(fileName, out texWidth, out texHeight, palette);
-            if (data == null)
-            {
-                data = new byte[4];
-                texWidth = 2;
-                texHeight = 2;
-            }
-            return data;
+            texWidth = 0;
+            texHeight = 0;
+            Bitmap bmp = (Bitmap)Image.FromFile(fileName, false);
+            if ((bmp.Width & 1) != 0) // Multiple of 2
+                return null;
+            texWidth = bmp.Width;
+            texHeight = bmp.Height;
+
+            // Replace hint palette with actual palette
+            byte[] img = null;
+            if (bmp.PixelFormat == PixelFormat.Format4bppIndexed)
+                img = Import4bppTextureFrom4bpp(bmp);
+            else if (bmp.PixelFormat == PixelFormat.Format8bppIndexed)
+                img = Import4bppTextureFrom8bpp(bmp);
+            else
+                img = Import4bppTextureFrom32bpp(bmp, palette);
+
+            bmp.Dispose();
+            return img;
         }
 
         /// <summary>
-        /// Import 8bpp Tileset from a file
+        /// Import 8bpp Texture from a file
         /// </summary>
         /// <param name="fileName">File name</param>
+        /// <param name="texWidth">[Out] Texture width</param>
+        /// <param name="texHeight">[Out] Texture height</param>
         /// <param name="palette">Palette (Hint)</param>
-        /// <param name="numHoles">[Out] Number of holes due to bad pixels</param>
         /// <returns>Tileset</returns>
-        static public byte[] Import8bppTexture(string fileName, out int texWidth, out int texHeight, Color[] palette)
+        static public byte[] Import8bppTextureFromImage(string fileName, out int texWidth, out int texHeight, Color[] palette)
         {
-            byte[] data = Import8bppTextureFromImage(fileName, out texWidth, out texHeight, palette);
-            if (data == null)
-            {
-                data = new byte[4];
-                texWidth = 2;
-                texHeight = 2;
-            }
-            return data;
+            texWidth = 0;
+            texHeight = 0;
+            Bitmap bmp = (Bitmap)Image.FromFile(fileName, false);
+            if ((bmp.Width & 1) != 0) // Multiple of 2
+                return null;
+            texWidth = bmp.Width;
+            texHeight = bmp.Height;
+
+            // Replace hint palette with actual palette
+            byte[] img = null;
+            if (bmp.PixelFormat == PixelFormat.Format4bppIndexed)
+                img = Import8bppTextureFrom4bpp(bmp);
+            else if (bmp.PixelFormat == PixelFormat.Format8bppIndexed)
+                img = Import8bppTextureFrom8bpp(bmp);
+            else
+                img = Import8bppTextureFrom32bpp(bmp, palette);
+
+            bmp.Dispose();
+            return img;
         }
 
         #endregion

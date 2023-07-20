@@ -56,6 +56,34 @@ namespace DB_KAI_RPG
 
         #endregion
 
+        public IMP(int width, int height)
+        {
+            this.fileName = "";
+            this.id = -1;
+
+            // Create dummy IMP
+            this.texWidth = width;
+            this.texHeight = height;
+            this.texRaw = new byte[width * height];
+            this.palette = new Color[256];
+            for (int i = 0; i < 256; i++) this.palette[i] = Color.Black;
+            this.Recompress();
+        }
+
+        public IMP(BinaryReader br)
+        {
+            this.fileName = "";
+            this.id = -1;
+            try
+            {
+                Read(br, false);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         public IMP(string file, int id, string fileName = "")
         {
             this.fileName = fileName;
@@ -73,7 +101,19 @@ namespace DB_KAI_RPG
         public void Read(string fileIn)
         {
             BinaryReader br = new BinaryReader(File.OpenRead(fileIn));
+            Read(br);
+            br.Close();
+        }
 
+        public void Write(string fileOut)
+        {
+            BinaryWriter bw = new BinaryWriter(File.OpenWrite(fileOut));
+            Write(bw);
+            bw.Close();
+        }
+
+        public void Read(BinaryReader br, bool readAll = true)
+        {
             // Header
             byte[] id = br.ReadBytes(4);
             if (id[0] != 'd' || id[1] != 'I' || id[2] != 'M' || id[3] != 'P')
@@ -106,20 +146,30 @@ namespace DB_KAI_RPG
             texHeight = heightCode * ((tileSized == 1) ? 8 : 2);
             texRaw = new byte[texWidth * texHeight];
 
-            // Read compressed data
-            long remain = br.BaseStream.Length - br.BaseStream.Position;
-            data = br.ReadBytes((int)remain);
+            if (readAll)
+			{
+                // Read all compressed data
+                long remain = br.BaseStream.Length - br.BaseStream.Position;
+                data = br.ReadBytes((int)remain);
 
-            // Decompress data into texture
-            PackCompress.Decode(data, ref texRaw, texWidth, texHeight);
+                // Decompress data into texture
+                PackCompress.Decode(data, ref texRaw, texWidth, texHeight);
+            }
+            else
+			{
+                // Decompress data but keep track of stream position
+                int start = (int)br.BaseStream.Position;
+                PackCompress.Decode(br, ref texRaw, texWidth, texHeight);
+                int end = (int)br.BaseStream.Position;
 
-            br.Close();
+                // Go back to read as raw data
+                br.BaseStream.Seek(start, SeekOrigin.Begin);
+                data = br.ReadBytes(end - start);
+            }
         }
 
-        public void Write(string fileOut)
+        public void Write(BinaryWriter bw)
         {
-            BinaryWriter bw = new BinaryWriter(File.OpenWrite(fileOut));
-
             // Header
             bw.Write('d'); bw.Write('I'); bw.Write('M'); bw.Write('P');
             if (texWidth >= 510 || texHeight >= 510)
@@ -143,8 +193,6 @@ namespace DB_KAI_RPG
 
             // Write compressed data
             bw.Write(data);
-
-            bw.Close();
         }
 
         public void Recompress()

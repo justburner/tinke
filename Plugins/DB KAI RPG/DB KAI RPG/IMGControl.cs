@@ -64,7 +64,7 @@ namespace DB_KAI_RPG
                     dIMG.Write(fileOut);
                     pluginHost.ChangeFile(dIMG.ID, fileOut);
                 }
-                catch (Exception ex) { MessageBox.Show("Error writing new palette:\n" + ex.Message); };
+                catch (Exception ex) { MessageBox.Show("Error writing new dIMG:\n" + ex.Message); };
             }
         }
 
@@ -81,9 +81,16 @@ namespace DB_KAI_RPG
         public void Update_Texture()
         {
             if (numericPalette.Value < dIMG.palette.Length)
+			{
                 pictureTileset.Image = Transform.Get4bppTextureBitmap(dIMG.texRaw, dIMG.texWidth, dIMG.texHeight, dIMG.palette[(int)numericPalette.Value]);
+                int slots = (dIMG.palette.Length > 1) ? 16 : 1;
+                labelData.Text = string.Format("Pal Slots: {0}\nTex. Res.: {1} x {2}\nTex. Size: {3} Bytes", slots, dIMG.texWidth, dIMG.texHeight, dIMG.texRaw.Length);
+            }
             else
+			{
                 pictureTileset.Image = null;
+                labelData.Text = "No Info";
+            }
         }
 
         private void numericPalette_ValueChanged(object sender, EventArgs e)
@@ -94,71 +101,31 @@ namespace DB_KAI_RPG
 
         private void buttonExportPal_Click(object sender, EventArgs e)
         {
-            SaveFileDialog o = new SaveFileDialog();
-            o.AddExtension = true;
-            o.CheckPathExists = true;
-            o.DefaultExt = ".pal";
-            o.Filter = "Windows Palette for Gimp 2.8 (*.pal)|*.pal|" +
-                       "Windows Palette (*.pal)|*.pal|" +
-                       "Portable Network Graphics (*.png)|*.png|" +
-                       "Adobe COlor (*.aco)|*.aco";
-            o.OverwritePrompt = true;
-            o.FileName = Path.ChangeExtension(dIMG.FileName, null);
-
-            if (o.ShowDialog() != DialogResult.OK)
-                return;
-
-            Transform.PalFormat format = Transform.PalFormat.PNG;
-            if (o.FilterIndex == 1)
-                format = Transform.PalFormat.GimpPal;
-            if (o.FilterIndex == 2)
-                format = Transform.PalFormat.WinPal;
-            if (o.FilterIndex == 3)
-                format = Transform.PalFormat.PNG;
-            if (o.FilterIndex == 4)
-                format = Transform.PalFormat.ACO;
+            Transform.PalFormat format;
+            string fileName = Transform.ExportPaletteDialog(dIMG.FileName, out format);
+            if (String.IsNullOrEmpty(fileName)) return;
 
             Color[] fullPal = Transform.Get1DPalette(dIMG.palette, 16);
-            Transform.ExportPalette(o.FileName, format, fullPal);
+            Transform.ExportPalette(fileName, format, fullPal);
         }
 
         private void buttonImportPal_Click(object sender, EventArgs e)
         {
-            OpenFileDialog o = new OpenFileDialog();
-            o.CheckFileExists = true;
-            o.Filter = "All supported formats|*.pal;*.aco;*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon|" +
-                "Windows Palette (*.pal)|*.pal|" +
-                "Adobe COlor (*.aco)|*.aco|" +
-                "Palette from image|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon";
-            if (o.ShowDialog() != DialogResult.OK)
-                return;
+            Transform.PalFormat format;
+            string fileName = Transform.ImportPaletteDialog(dIMG.FileName, out format);
+            if (String.IsNullOrEmpty(fileName)) return;
 
-            string ext = Path.GetExtension(o.FileName).ToLower();
-            if (string.IsNullOrEmpty(ext) || ext.Length == 0)
-            {
-                MessageBox.Show("File without extension... Aborting");
-                return;
-            }
-
-            if (ext.Contains("."))
-                ext = ext.Substring(ext.LastIndexOf(".") + 1);
-            Console.WriteLine("File extension:" + ext);
-
-            Transform.PalFormat format = Transform.PalFormat.PNG;
-            if (ext == "pal")
-                format = Transform.PalFormat.WinPal;
-            else if (ext == "aco")
-                format = Transform.PalFormat.ACO;
-            else if (ext == "png")
-                format = Transform.PalFormat.PNG;
-
-            Color[][] palette = Transform.ImportPalette(o.FileName, format);
+            Color[] palette = Transform.ImportPalette(fileName, format);
             if (palette == null)
 			{
                 MessageBox.Show("Invalid palette file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            dIMG.palette = palette;
+            if (palette.Length > 16)
+                palette = Transform.Resize1DPalette(palette, 256);
+            else
+                palette = Transform.Resize1DPalette(palette, 16);
+            dIMG.palette = Transform.Get2DPalette(palette, 16);
             numericPalette.Value = 0;
 
             // Write file
@@ -181,7 +148,7 @@ namespace DB_KAI_RPG
             if (o.ShowDialog() != DialogResult.OK)
                 return;
 
-            Transform.Export4bppTexture(o.FileName, dIMG.texRaw, dIMG.texWidth, dIMG.texHeight, dIMG.palette[(int)numericPalette.Value]);
+            Transform.Export4bppTexturePNG(o.FileName, dIMG.texRaw, dIMG.texWidth, dIMG.texHeight, dIMG.palette[(int)numericPalette.Value]);
         }
 
         private void buttonImportTexture_Click(object sender, EventArgs e)
@@ -194,7 +161,12 @@ namespace DB_KAI_RPG
                 return;
 
             int width, height;
-            byte[] texture = Transform.Import4bppTexture(o.FileName, out width, out height, dIMG.palette[(int)numericPalette.Value]);
+            byte[] texture = Transform.Import4bppTextureFromImage(o.FileName, out width, out height, dIMG.palette[(int)numericPalette.Value]);
+            if (texture == null)
+            {
+                MessageBox.Show("Invalid image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             if ((width & 3) != 0)
             {
                 MessageBox.Show("Invalid texture size: width must be multiple of 4.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);

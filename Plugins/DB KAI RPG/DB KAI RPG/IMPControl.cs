@@ -64,7 +64,7 @@ namespace DB_KAI_RPG
                     dIMP.Write(fileOut);
                     pluginHost.ChangeFile(dIMP.ID, fileOut);
                 }
-                catch (Exception ex) { MessageBox.Show("Error writing new palette:\n" + ex.Message); };
+                catch (Exception ex) { MessageBox.Show("Error writing new dIMP:\n" + ex.Message); };
             }
         }
 
@@ -81,7 +81,7 @@ namespace DB_KAI_RPG
             if (dIMP.palette.Length != 0) {
                 pictureTileset.Image = Transform.Get8bppTextureBitmap(dIMP.texRaw, dIMP.texWidth, dIMP.texHeight, dIMP.palette);
                 double ratio = (double)dIMP.texRaw.Length / (double)dIMP.data.Length;
-                labelData.Text = string.Format("Tex. Size: {0} Bytes\nData Size: {1} Bytes\nCompression Ratio: {2:0.##}", dIMP.texRaw.Length, dIMP.data.Length, ratio);
+                labelData.Text = string.Format("Tex. Res.: {0} x {1}\nTex. Size: {2} Bytes\nData Size: {3} Bytes\nCompression Ratio: {4:0.##}", dIMP.texWidth, dIMP.texHeight, dIMP.texRaw.Length, dIMP.data.Length, ratio);
             }
             else
             {
@@ -98,70 +98,26 @@ namespace DB_KAI_RPG
 
         private void buttonExportPal_Click(object sender, EventArgs e)
         {
-            SaveFileDialog o = new SaveFileDialog();
-            o.AddExtension = true;
-            o.CheckPathExists = true;
-            o.DefaultExt = ".pal";
-            o.Filter = "Windows Palette for Gimp 2.8 (*.pal)|*.pal|" +
-                       "Windows Palette (*.pal)|*.pal|" +
-                       "Portable Network Graphics (*.png)|*.png|" +
-                       "Adobe COlor (*.aco)|*.aco";
-            o.OverwritePrompt = true;
-            o.FileName = Path.ChangeExtension(dIMP.FileName, null);
+            Transform.PalFormat format;
+            string fileName = Transform.ExportPaletteDialog(dIMP.FileName, out format);
+            if (String.IsNullOrEmpty(fileName)) return;
 
-            if (o.ShowDialog() != DialogResult.OK)
-                return;
-
-            Transform.PalFormat format = Transform.PalFormat.PNG;
-            if (o.FilterIndex == 1)
-                format = Transform.PalFormat.GimpPal;
-            if (o.FilterIndex == 2)
-                format = Transform.PalFormat.WinPal;
-            if (o.FilterIndex == 3)
-                format = Transform.PalFormat.PNG;
-            if (o.FilterIndex == 4)
-                format = Transform.PalFormat.ACO;
-
-            Transform.ExportPalette(o.FileName, format, dIMP.palette);
+            Transform.ExportPalette(fileName, format, dIMP.palette);
         }
 
         private void buttonImportPal_Click(object sender, EventArgs e)
         {
-            OpenFileDialog o = new OpenFileDialog();
-            o.CheckFileExists = true;
-            o.Filter = "All supported formats|*.pal;*.aco;*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon|" +
-                "Windows Palette (*.pal)|*.pal|" +
-                "Adobe COlor (*.aco)|*.aco|" +
-                "Palette from image|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon";
-            if (o.ShowDialog() != DialogResult.OK)
-                return;
+            Transform.PalFormat format;
+            string fileName = Transform.ImportPaletteDialog(dIMP.FileName, out format);
+            if (String.IsNullOrEmpty(fileName)) return;
 
-            string ext = Path.GetExtension(o.FileName).ToLower();
-            if (string.IsNullOrEmpty(ext) || ext.Length == 0)
-            {
-                MessageBox.Show("File without extension... Aborting");
-                return;
-            }
-
-            if (ext.Contains("."))
-                ext = ext.Substring(ext.LastIndexOf(".") + 1);
-            Console.WriteLine("File extension:" + ext);
-
-            Transform.PalFormat format = Transform.PalFormat.PNG;
-            if (ext == "pal")
-                format = Transform.PalFormat.WinPal;
-            else if (ext == "aco")
-                format = Transform.PalFormat.ACO;
-            else if (ext == "png")
-                format = Transform.PalFormat.PNG;
-
-            Color[][] palette = Transform.ImportPalette(o.FileName, format);
+            Color[] palette = Transform.ImportPalette(fileName, format);
             if (palette == null)
 			{
                 MessageBox.Show("Invalid palette file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            dIMP.palette = Transform.Get1DPalette(palette, 16);
+            dIMP.palette = Transform.Resize1DPalette(palette, 256);
 
             // Write file
             Write_File();
@@ -183,7 +139,7 @@ namespace DB_KAI_RPG
             if (o.ShowDialog() != DialogResult.OK)
                 return;
 
-            Transform.Export8bppTexture(o.FileName, dIMP.texRaw, dIMP.texWidth, dIMP.texHeight, dIMP.palette);
+            Transform.Export8bppTexturePNG(o.FileName, dIMP.texRaw, dIMP.texWidth, dIMP.texHeight, dIMP.palette);
         }
 
         private void buttonImportTexture_Click(object sender, EventArgs e)
@@ -196,7 +152,12 @@ namespace DB_KAI_RPG
                 return;
 
             int width, height;
-            byte[] texture = Transform.Import8bppTexture(o.FileName, out width, out height, dIMP.palette);
+            byte[] texture = Transform.Import8bppTextureFromImage(o.FileName, out width, out height, dIMP.palette);
+            if (texture == null)
+            {
+                MessageBox.Show("Invalid image file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             if (width >= 510 || height >= 510)
 			{
                 if ((width & 7) != 0 || (height & 7) != 0)
