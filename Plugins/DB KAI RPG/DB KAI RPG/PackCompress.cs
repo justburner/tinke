@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace DB_KAI_RPG
 {
-	static class PackCompress
-	{
+    static class PackCompress
+    {
         #region [ Constants ]
 
         public static readonly int[] kOffTab_ZR = {
@@ -185,6 +185,21 @@ namespace DB_KAI_RPG
             return size;
         }
 
+        private struct TPBlock
+        {
+            public int offset;
+            public bool recall;
+            public int size;
+            public int index;
+
+            static public TPBlock GetIndex(List<TPBlock> blocks, int index)
+            {
+                if (index < 0 || index >= blocks.Count)
+                    return new TPBlock() { offset = -1 };
+                return blocks[index];
+            }
+        };
+
         static public byte[] Encode(byte[] pixels, int width, int height)
         {
             MemoryStream st = new MemoryStream();
@@ -194,24 +209,9 @@ namespace DB_KAI_RPG
             // Create decoding table
             int[] offTable = GenOffsetTable(width);
 
-            // Packed Texture
-            int ptrB = 1, ptrE = 1;
-            bw.Write(pixels[0]);
-            int raw = 0;
-
-            Action WriteRawData = () =>
-            {
-                while (raw > 0)
-                {
-                    int wraw = Math.Min(raw, 16);
-                    bw.Write((byte)(wraw - 1));
-                    for (int i = 0; i < wraw; i++) bw.Write(pixels[ptrB++]);
-                    raw -= wraw;
-                }
-            };
-
-            // This compression algorithm is not as good as the original but does the job well.
-            // The only thing lacking is raw copy after a recall but that would require a complete overhaul.
+            // Build compression blocks
+            int ptrE = 1;
+            List<TPBlock> blocks = new List<TPBlock>();
             while (ptrE < len)
             {
                 // Check repeating byte
@@ -233,31 +233,86 @@ namespace DB_KAI_RPG
                 // Any compression resulted >= 3 bytes gets added
                 if (rep >= 3 && rep > bestSize)
                 {
-                    WriteRawData();
-                    int wrep = Math.Min(rep, 258);
-                    bw.Write((byte)0x10);
-                    bw.Write((byte)(wrep - 3));
-                    ptrB += wrep;
-                    ptrE += wrep;
+                    TPBlock block = new TPBlock();
+                    block.offset = ptrE;
+                    block.recall = false;
+                    block.size = Math.Min(rep, 258);
+                    blocks.Add(block);
+                    ptrE += block.size;
                 }
                 else if (bestSize >= 3)
                 {
-                    WriteRawData();
-                    if (bestIdx < 16 && bestSize <= 8)
-                    {
-                        bw.Write((byte)(((bestSize - 1) << 4) | bestIdx));
-                    }
-                    else
-                    {
-                        bw.Write((byte)(0x80 + bestSize - 3));
-                        bw.Write((byte)bestIdx);
-                    }
-                    ptrB += bestSize;
-                    ptrE += bestSize;
+                    TPBlock block = new TPBlock();
+                    block.offset = ptrE;
+                    block.recall = true;
+                    block.size = bestSize;
+                    block.index = bestIdx;
+                    blocks.Add(block);
+                    ptrE += block.size;
                 }
                 else
                 {
-                    raw++;
+                    ptrE++;
+                }
+            }
+
+            // Packed Texture
+            bw.Write(pixels[0]);
+            int rawSize = 0;
+
+            Action WriteRawData = () =>
+            {
+                int offs = ptrE - rawSize;
+                while (rawSize > 0)
+                {
+                    int wraw = Math.Min(rawSize, 16);
+                    bw.Write((byte)(wraw - 1));
+                    for (int i = 0; i < wraw; i++) bw.Write(pixels[offs++]);
+                    rawSize -= wraw;
+                }
+            };
+
+            ptrE = 1;
+            int blockID = 0;
+            TPBlock blockNow = TPBlock.GetIndex(blocks, blockID++);
+            TPBlock blockNxt = TPBlock.GetIndex(blocks, blockID++);
+            while (ptrE < len)
+            {
+                // Compression block has been hit
+                if (ptrE == blockNow.offset)
+                {
+                    WriteRawData();
+                    if (blockNow.recall)
+                    {
+                        if (blockNow.index < 16 && blockNow.size <= 8)
+                        {
+                            // Recall short
+                            bw.Write((byte)(((blockNow.size - 1) << 4) | blockNow.index));
+                            ptrE += blockNow.size;
+                        }
+                        else
+                        {
+                            // Recall extended
+                            int postRaw = Math.Min(Math.Max(blockNxt.offset - (blockNow.offset + blockNow.size), 0), 7);
+                            bw.Write((byte)(0x80 + postRaw * 16 + blockNow.size - 3));
+                            bw.Write((byte)blockNow.index);
+                            ptrE += blockNow.size;
+                            for (int i = 0; i < postRaw; i++) bw.Write(pixels[ptrE++]);
+                        }
+                    }
+                    else
+                    {
+                        // Repeat
+                        bw.Write((byte)0x10);
+                        bw.Write((byte)(blockNow.size - 3));
+                        ptrE += blockNow.size;
+                    }
+                    blockNow = blockNxt;
+                    blockNxt = TPBlock.GetIndex(blocks, blockID++);
+                }
+                else
+                {
+                    rawSize++;
                     ptrE++;
                 }
             }
