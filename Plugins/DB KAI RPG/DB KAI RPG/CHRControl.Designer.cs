@@ -47,6 +47,9 @@ namespace DB_KAI_RPG
 			this.buttonImportTiles = new System.Windows.Forms.Button();
 			this.buttonExportTiles = new System.Windows.Forms.Button();
 			this.groupSprite = new System.Windows.Forms.GroupBox();
+			this.labelNumFrames = new System.Windows.Forms.Label();
+			this.numericFrame = new System.Windows.Forms.NumericUpDown();
+			this.label5 = new System.Windows.Forms.Label();
 			this.labelNumLayers = new System.Windows.Forms.Label();
 			this.listLayers = new System.Windows.Forms.ListBox();
 			this.contextMenuLayers = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -65,6 +68,7 @@ namespace DB_KAI_RPG
 			((System.ComponentModel.ISupportInitialize)(this.numericMaxTiles)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.numericPreviewWidth)).BeginInit();
 			this.groupSprite.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.numericFrame)).BeginInit();
 			this.contextMenuLayers.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.numericSprite)).BeginInit();
 			this.SuspendLayout();
@@ -263,6 +267,9 @@ namespace DB_KAI_RPG
 			// 
 			// groupSprite
 			// 
+			this.groupSprite.Controls.Add(this.labelNumFrames);
+			this.groupSprite.Controls.Add(this.numericFrame);
+			this.groupSprite.Controls.Add(this.label5);
 			this.groupSprite.Controls.Add(this.labelNumLayers);
 			this.groupSprite.Controls.Add(this.listLayers);
 			this.groupSprite.Controls.Add(this.labelNumSprites);
@@ -275,10 +282,46 @@ namespace DB_KAI_RPG
 			this.groupSprite.TabStop = false;
 			this.groupSprite.Text = "Sprites";
 			// 
+			// labelNumFrames
+			// 
+			this.labelNumFrames.AutoSize = true;
+			this.labelNumFrames.Location = new System.Drawing.Point(154, 47);
+			this.labelNumFrames.Name = "labelNumFrames";
+			this.labelNumFrames.Size = new System.Drawing.Size(25, 13);
+			this.labelNumFrames.TabIndex = 7;
+			this.labelNumFrames.Text = "of 0";
+			// 
+			// numericFrame
+			// 
+			this.numericFrame.Location = new System.Drawing.Point(88, 45);
+			this.numericFrame.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+			this.numericFrame.Name = "numericFrame";
+			this.numericFrame.Size = new System.Drawing.Size(60, 20);
+			this.numericFrame.TabIndex = 6;
+			this.numericFrame.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+			this.numericFrame.ValueChanged += new System.EventHandler(this.numericFrame_ValueChanged);
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(45, 47);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(39, 13);
+			this.label5.TabIndex = 5;
+			this.label5.Text = "Frame:";
+			// 
 			// labelNumLayers
 			// 
 			this.labelNumLayers.AutoSize = true;
-			this.labelNumLayers.Location = new System.Drawing.Point(154, 45);
+			this.labelNumLayers.Location = new System.Drawing.Point(154, 69);
 			this.labelNumLayers.Name = "labelNumLayers";
 			this.labelNumLayers.Size = new System.Drawing.Size(45, 13);
 			this.labelNumLayers.TabIndex = 4;
@@ -288,10 +331,10 @@ namespace DB_KAI_RPG
 			// 
 			this.listLayers.ContextMenuStrip = this.contextMenuLayers;
 			this.listLayers.FormattingEnabled = true;
-			this.listLayers.Location = new System.Drawing.Point(6, 45);
+			this.listLayers.Location = new System.Drawing.Point(6, 71);
 			this.listLayers.Name = "listLayers";
 			this.listLayers.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-			this.listLayers.Size = new System.Drawing.Size(142, 186);
+			this.listLayers.Size = new System.Drawing.Size(142, 160);
 			this.listLayers.TabIndex = 3;
 			this.listLayers.SelectedIndexChanged += new System.EventHandler(this.listLayers_SelectedIndexChanged);
 			// 
@@ -321,9 +364,19 @@ namespace DB_KAI_RPG
 			// numericSprite
 			// 
 			this.numericSprite.Location = new System.Drawing.Point(88, 19);
+			this.numericSprite.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
 			this.numericSprite.Name = "numericSprite";
 			this.numericSprite.Size = new System.Drawing.Size(60, 20);
 			this.numericSprite.TabIndex = 1;
+			this.numericSprite.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
 			this.numericSprite.ValueChanged += new System.EventHandler(this.numericSprite_ValueChanged);
 			// 
 			// label2
@@ -368,6 +421,7 @@ namespace DB_KAI_RPG
 			((System.ComponentModel.ISupportInitialize)(this.numericPreviewWidth)).EndInit();
 			this.groupSprite.ResumeLayout(false);
 			this.groupSprite.PerformLayout();
+			((System.ComponentModel.ISupportInitialize)(this.numericFrame)).EndInit();
 			this.contextMenuLayers.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.numericSprite)).EndInit();
 			this.ResumeLayout(false);
@@ -403,5 +457,8 @@ namespace DB_KAI_RPG
 		private System.Windows.Forms.NumericUpDown numericMaxTiles;
 		private System.Windows.Forms.ContextMenuStrip contextMenuLayers;
 		private System.Windows.Forms.ToolStripMenuItem deselectToolStripMenuItem;
+		private System.Windows.Forms.Label labelNumFrames;
+		private System.Windows.Forms.NumericUpDown numericFrame;
+		private System.Windows.Forms.Label label5;
 	}
 }

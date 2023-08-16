@@ -35,9 +35,9 @@ namespace DB_KAI_RPG
 {
     public class CHR
     {
-		#region [ Variables ]
+        #region [ Variables ]
 
-		protected string fileName;
+        protected string fileName;
         protected int id;
 
         public byte chrFlags;
@@ -47,29 +47,33 @@ namespace DB_KAI_RPG
         public long chrDataPos;
         public List<Sprite> sprites;
 
-		#endregion
+        #endregion
 
-		#region [ Properties ]
+        #region [ Properties ]
 
-		public string FileName { get { return fileName; } }
+        public string FileName { get { return fileName; } }
         public int ID { get { return id; } }
 
-		#endregion
+        #endregion
 
-		#region [ Character Data ]
+        #region [ Character Data ]
 
-		public struct Sprite
+        public struct Frame
         {
             public List<Layer> layers;
             public bool extended;
 
-            public byte flags1, flags2;
-            public byte unknown1, unknown2;
-            public byte unknown3, unknown4;
+            public ushort ticks;
+        };
+
+        public struct Sprite
+        {
+            public List<Frame> frames;
 
             public long debugOffset; // DEBUG
             public long debugRemain; // DEBUG
         };
+
         public struct Layer
         {
             public int x;
@@ -206,7 +210,7 @@ namespace DB_KAI_RPG
         }
         
         public void DecodeCharacterData()
-		{
+        {
             Stream stream = new MemoryStream(chrData);
             BinaryReader br = new BinaryReader(stream);
 
@@ -232,71 +236,78 @@ namespace DB_KAI_RPG
                 {
                     br.BaseStream.Seek(animOffsetPos + offsets[i], SeekOrigin.Begin);
                     Sprite sprite = new Sprite();
+                    sprite.frames = new List<Frame>();
                     sprite.debugOffset = br.BaseStream.Position;
-                    int numLayers = br.ReadByte();
 
-                    if (numLayers == 16)
-					{
-                        sprite.flags1 = br.ReadByte();
-                        sprite.flags2 = br.ReadByte();
-                        numLayers = br.ReadByte();
+                    while(true)
+                    {
+                        Frame frame = new Frame();
+                        int numLayers = br.ReadByte();
+                        if (numLayers == 0) break;
 
-                        sprite.extended = true;
-                        sprite.layers = new List<Layer>();
-                        for (int j = 0; j < numLayers; j++)
+                        if (numLayers == 16)
                         {
-                            Layer layer = new Layer();
-                            ushort halfwd0 = br.ReadUInt16();
-                            ushort halfwd1 = br.ReadUInt16();
-                            ushort halfwd2 = br.ReadUInt16();
+                            frame.ticks = br.ReadUInt16();
+                            numLayers = br.ReadByte();
 
-                            layer.x = ((halfwd1 & 0x800) != 0) ? (int)((halfwd1 & 0xFFF) | 0xFFFFF000) : (halfwd1 & 0x7FF);
-                            layer.y = ((halfwd0 & 0x200) != 0) ? (int)((halfwd0 & 0x3FF) | 0xFFFFFC00) : (halfwd0 & 0x1FF);
-                            layer.tile = halfwd2;
-                            layer.objsize = (byte)((halfwd1 & 0xC000) >> 14);
-                            layer.objshape = (byte)((halfwd0 & 0xC000) >> 14);
-                            layer.vflip = (halfwd1 & 0x2000) != 0;
-                            layer.hflip = (halfwd1 & 0x1000) != 0;
-                            layer.translucent = (halfwd0 & 0x0400) != 0;
+                            frame.extended = true;
+                            frame.layers = new List<Layer>();
+                            for (int j = 0; j < numLayers; j++)
+                            {
+                                Layer layer = new Layer();
+                                ushort halfwd0 = br.ReadUInt16();
+                                ushort halfwd1 = br.ReadUInt16();
+                                ushort halfwd2 = br.ReadUInt16();
 
-                            layer.datastr = string.Format("{0:X04}:{1:X04}:{2:X04}", halfwd0, halfwd1, halfwd2);
-                            sprite.layers.Add(layer);
+                                layer.x = ((halfwd1 & 0x800) != 0) ? (int)((halfwd1 & 0xFFF) | 0xFFFFF000) : (halfwd1 & 0x7FF);
+                                layer.y = ((halfwd0 & 0x200) != 0) ? (int)((halfwd0 & 0x3FF) | 0xFFFFFC00) : (halfwd0 & 0x1FF);
+                                layer.tile = halfwd2;
+                                layer.objsize = (byte)((halfwd1 & 0xC000) >> 14);
+                                layer.objshape = (byte)((halfwd0 & 0xC000) >> 14);
+                                layer.vflip = (halfwd1 & 0x2000) != 0;
+                                layer.hflip = (halfwd1 & 0x1000) != 0;
+                                layer.translucent = (halfwd0 & 0x0400) != 0;
+
+                                layer.datastr = string.Format("{0:X04}:{1:X04}:{2:X04}", halfwd0, halfwd1, halfwd2);
+                                frame.layers.Add(layer);
+                            }
                         }
-                    }
-                    else
-					{
-                        sprite.flags1 = br.ReadByte();
-                        sprite.flags2 = 0;
-
-                        sprite.extended = false;
-                        sprite.layers = new List<Layer>();
-                        for (int j = 0; j < numLayers; j++)
+                        else
                         {
-                            Layer layer = new Layer();
-                            sbyte byte0 = br.ReadSByte();
-                            sbyte byte1 = br.ReadSByte();
-                            byte byte2 = br.ReadByte();
-                            byte byte3 = br.ReadByte();
+                            frame.ticks = br.ReadByte();
 
-                            layer.x = byte0;
-                            layer.y = byte1;
-                            layer.tile = byte2;
-                            layer.objsize = (byte)((byte3 & 0xC0) >> 6);
-                            layer.objshape = (byte)((byte3 & 0x0C) >> 2);
-                            layer.vflip = (byte3 & 0x20) != 0;
-                            layer.hflip = (byte3 & 0x10) != 0;
-                            layer.translucent = (byte3 & 0x02) != 0;
-                            if ((byte3 & 0x01) != 0) layer.tile += 256;
+                            frame.extended = false;
+                            frame.layers = new List<Layer>();
+                            for (int j = 0; j < numLayers; j++)
+                            {
+                                Layer layer = new Layer();
+                                sbyte byte0 = br.ReadSByte();
+                                sbyte byte1 = br.ReadSByte();
+                                byte byte2 = br.ReadByte();
+                                byte byte3 = br.ReadByte();
 
-                            layer.datastr = string.Format("{0:X02}:{1:X02}:{2:X02}:{3:X02}", byte0, byte1, byte2, byte3);
-                            sprite.layers.Add(layer);
+                                layer.x = byte0;
+                                layer.y = byte1;
+                                layer.tile = byte2;
+                                layer.objsize = (byte)((byte3 & 0xC0) >> 6);
+                                layer.objshape = (byte)((byte3 & 0x0C) >> 2);
+                                layer.vflip = (byte3 & 0x20) != 0;
+                                layer.hflip = (byte3 & 0x10) != 0;
+                                layer.translucent = (byte3 & 0x02) != 0;
+                                if ((byte3 & 0x01) != 0) layer.tile += 256;
+
+                                layer.datastr = string.Format("{0:X02}:{1:X02}:{2:X02}:{3:X02}", byte0, byte1, byte2, byte3);
+                                frame.layers.Add(layer);
+                            }
                         }
+                        sprite.frames.Add(frame);
+
+                        // Discard extra data for now...
+                        int extra = br.ReadByte();
+                        int exbytes = (extra * 3 + 2) & ~1;  // weird...
+                        for (int j = 0; j < exbytes - 1; j++) br.ReadByte();
                     }
 
-                    sprite.unknown1 = br.ReadByte();
-                    sprite.unknown2 = br.ReadByte();
-                    sprite.unknown3 = br.ReadByte();
-                    sprite.unknown4 = br.ReadByte();
                     if (i + 1 < numSprites)
                     {
                         sprite.debugRemain = animOffsetPos + offsets[i + 1] - br.BaseStream.Position;
@@ -305,6 +316,7 @@ namespace DB_KAI_RPG
                     {
                         sprite.debugRemain = br.BaseStream.Length - br.BaseStream.Position;
                     }
+
                     sprites.Add(sprite);
                 }
             }

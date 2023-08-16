@@ -81,7 +81,7 @@ namespace DB_KAI_RPG
             if (dCHR.chrFlags == 0)
                 labelDebug.Text = "";
             else
-                labelDebug.Text = string.Format("WARNING: This format is incomplete\nData Off.: ${0:X06}\nData Size: {1} bytes", dCHR.chrDataPos, dCHR.chrData.Length);
+                labelDebug.Text = string.Format("Data Off.: ${0:X06}\nData Size: {1} bytes", dCHR.chrDataPos, dCHR.chrData.Length);
         }
 
         public void Update_Tileset()
@@ -101,10 +101,10 @@ namespace DB_KAI_RPG
             if (dCHR.sprites.Count <= 0)
                 return;
 
-            numericSprite.Maximum = Math.Max(dCHR.sprites.Count - 1, 0);
-            labelNumSprites.Text = string.Format("of {0}", dCHR.sprites.Count - 1);
+            numericSprite.Maximum = Math.Max(dCHR.sprites.Count, 0);
+            labelNumSprites.Text = string.Format("of {0}", dCHR.sprites.Count);
 
-            int sprite = (int)numericSprite.Value;
+            int sprite = (int)numericSprite.Value - 1;
             int paletteSlot = (int)numericPalette.Value;
 
             Bitmap bmp = new Bitmap(pictureSprite.Width, pictureSprite.Height);
@@ -122,19 +122,26 @@ namespace DB_KAI_RPG
                 return;
             CHR.Sprite chrSprite = dCHR.sprites[sprite];
 
+            numericFrame.Maximum = Math.Max(chrSprite.frames.Count, 0);
+            labelNumFrames.Text = string.Format("of {0}", chrSprite.frames.Count);
+
+            int frame = (int)numericFrame.Value - 1;
+
+            if (frame >= chrSprite.frames.Count)
+                return;
+            CHR.Frame chrFrame = chrSprite.frames[frame];
+
             labelNumLayers.Text = "Character data info:\n";
-            labelNumLayers.Text += string.Format("\nTotal layers: {0}\nExtended?: {1}\nFlags: 0x{2:X02}:0x{3:X02}\nData offset: ${4:X06}\nData remain: {5}", chrSprite.layers.Count, chrSprite.extended ? "yes" : "no", chrSprite.flags1, chrSprite.flags2, dCHR.chrDataPos + chrSprite.debugOffset, chrSprite.debugRemain);
-            labelNumLayers.Text += string.Format("\nUnknown1: 0x{0:X02}\nUnknown2: 0x{1:X02}\nUnknown2: 0x{2:X02}\nUnknown2: 0x{3:X02}", chrSprite.unknown1, chrSprite.unknown2, chrSprite.unknown3, chrSprite.unknown4);
-            labelNumLayers.Text += "\n\nAnimation not supported.";
+            labelNumLayers.Text += string.Format("\nTotal layers: {0}\nExtended?: {1}\nFrame Ticks: {2}\n\nData offset: ${3:X06}\nData remain: {4}", chrFrame.layers.Count, chrFrame.extended ? "yes" : "no", chrFrame.ticks, dCHR.chrDataPos + chrSprite.debugOffset, chrSprite.debugRemain);
 
             // List all layers
             if (relistLayers)
             {
                 listLayers.Items.Clear();
                 listLayers.ClearSelected();
-                for (int i = 0; i < chrSprite.layers.Count; i++)
+                for (int i = 0; i < chrFrame.layers.Count; i++)
                 {
-                    CHR.Layer chrPart = chrSprite.layers[i];
+                    CHR.Layer chrPart = chrFrame.layers[i];
                     listLayers.Items.Add(chrPart.ToString());
                 }
             }
@@ -142,22 +149,22 @@ namespace DB_KAI_RPG
             // Render last to first, non selected to selected
             if (listLayers.SelectedIndex != -1)
             {
-                for (int i = chrSprite.layers.Count - 1; i >= 0; i--)
+                for (int i = chrFrame.layers.Count - 1; i >= 0; i--)
                 {
                     bool selected = listLayers.GetSelected(i);
                     if (!selected)
                     {
-                        CHR.Layer chrPart = chrSprite.layers[i];
+                        CHR.Layer chrPart = chrFrame.layers[i];
                         dCHR.DrawLayer(bmp, centerX, centerY, ref chrPart, paletteSlot, false);
                     }
                 }
             }
-            for (int i = chrSprite.layers.Count - 1; i >= 0; i--)
+            for (int i = chrFrame.layers.Count - 1; i >= 0; i--)
             {
                 bool selected = listLayers.GetSelected(i) || listLayers.SelectedIndex == -1;
                 if (selected)
                 {
-                    CHR.Layer chrPart = chrSprite.layers[i];
+                    CHR.Layer chrPart = chrFrame.layers[i];
                     dCHR.DrawLayer(bmp, centerX, centerY, ref chrPart, paletteSlot, true);
                 }
             }
@@ -177,6 +184,12 @@ namespace DB_KAI_RPG
         }
 
         private void numericSprite_ValueChanged(object sender, EventArgs e)
+        {
+            numericFrame.Value = 1;
+            Update_Animation(true);
+        }
+
+        private void numericFrame_ValueChanged(object sender, EventArgs e)
         {
             Update_Animation(true);
         }
@@ -204,7 +217,7 @@ namespace DB_KAI_RPG
 
             Color[] palette = Transform.ImportPalette(fileName, format);
             if (palette == null)
-			{
+            {
                 MessageBox.Show("Invalid palette file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -221,8 +234,8 @@ namespace DB_KAI_RPG
             Update_Animation(false);
         }
 
-		private void buttonExportTiles_Click(object sender, EventArgs e)
-		{
+        private void buttonExportTiles_Click(object sender, EventArgs e)
+        {
             SaveFileDialog o = new SaveFileDialog();
             o.AddExtension = true;
             o.CheckPathExists = true;
@@ -238,7 +251,7 @@ namespace DB_KAI_RPG
         }
 
         private void buttonImportTiles_Click(object sender, EventArgs e)
-		{
+        {
             OpenFileDialog o = new OpenFileDialog();
             o.CheckFileExists = true;
             o.Filter = "All supported formats|*.png;*.bmp;*.jpg;*.jpeg;*.tif;*.tiff;*.gif;*.ico;*.icon";
@@ -265,13 +278,13 @@ namespace DB_KAI_RPG
             Update_Animation(false);
         }
 
-		private void checkMaxTiles_CheckedChanged(object sender, EventArgs e)
-		{
+        private void checkMaxTiles_CheckedChanged(object sender, EventArgs e)
+        {
             numericMaxTiles.Enabled = checkMaxTiles.Checked;
         }
 
-		private void deselectToolStripMenuItem_Click(object sender, EventArgs e)
-		{
+        private void deselectToolStripMenuItem_Click(object sender, EventArgs e)
+        {
             listLayers.ClearSelected();
         }
     }
