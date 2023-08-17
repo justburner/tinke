@@ -58,53 +58,57 @@ namespace DB_KAI_RPG
 
         #region [ Character Data ]
 
-        public struct Frame
-        {
-            public List<Layer> layers;
-            public bool extended;
-
-            public ushort ticks;
-        };
-
-        public struct Sprite
-        {
-            public List<Frame> frames;
-
-            public long debugOffset; // DEBUG
-            public long debugRemain; // DEBUG
-        };
-
-        public struct Layer
+        public class Layer
         {
             public int x;
             public int y;
             public ushort tile;
 
-            public byte objsize;
-            public byte objshape;
+            // size[0:1] shape[2:3]
+            //  8x8, 16x16, 32x32, 64x64
+            // 16x8,  32x8, 32x16, 64x32
+            // 8x16,  8x32, 16x32, 32x64
+            public int objsize;
 
             public bool vflip;
             public bool hflip;
 
             public bool translucent;
 
-            public string datastr;
+            public static Layer Blank()
+            {
+                Layer layer = new Layer();
+                return layer;
+            }
+
+            public Layer Clone()
+            {
+                Layer layer = new Layer();
+                layer.x = x;
+                layer.y = y;
+                layer.tile = tile;
+                layer.objsize = objsize;
+                layer.vflip = vflip;
+                layer.hflip = hflip;
+                layer.translucent = translucent;
+                return layer;
+            }
 
             public int Width
             {
                 get
                 {
-                    switch (objsize * 16 + objshape)
+                    switch (objsize)
                     {
-                        case 0x10: return 2;
-                        case 0x20: return 4;
-                        case 0x30: return 8;
-                        case 0x01: return 2;
-                        case 0x11: return 4;
-                        case 0x21: return 4;
-                        case 0x31: return 8;
-                        case 0x22: return 2;
-                        case 0x32: return 4;
+                        case 1: return 2; // 16x16
+                        case 2: return 4; // 32x32
+                        case 3: return 8; // 64x64
+                        case 4: return 2; // 16x8
+                        case 5: return 4; // 32x8
+                        case 6: return 4; // 32x16
+                        case 7: return 8; // 64x32
+                        case 10: return 2; // 16x32
+                        case 11: return 4; // 32x64
                         default: return 1;
                     }
                 }
@@ -114,17 +118,17 @@ namespace DB_KAI_RPG
             {
                 get
                 {
-                    switch (objsize * 16 + objshape)
+                    switch (objsize)
                     {
-                        case 0x10: return 2;
-                        case 0x20: return 4;
-                        case 0x30: return 8;
-                        case 0x21: return 2;
-                        case 0x31: return 4;
-                        case 0x02: return 2;
-                        case 0x12: return 4;
-                        case 0x22: return 4;
-                        case 0x32: return 8;
+                        case 1: return 2; // 16x16
+                        case 2: return 4; // 32x32
+                        case 3: return 8; // 64x64
+                        case 6: return 2; // 32x16
+                        case 7: return 4; // 64x32
+                        case 8: return 2; // 8x16
+                        case 9: return 4; // 8x32
+                        case 10: return 4; // 16x32
+                        case 11: return 8; // 32x64
                         default: return 1;
                     }
                 }
@@ -132,9 +136,69 @@ namespace DB_KAI_RPG
 
             public override string ToString()
             {
-                return string.Format("{2}: {0},{1} {5}{6} {3}x{4}", x, y, tile, Width * 8, Height * 8, vflip ? "V" : "-", hflip ? "H" : "-");
+                return string.Format("{2}: {0},{1} {5}{6}{7} {3}x{4}", x, y, tile, Width * 8, Height * 8, vflip ? "V" : "-", hflip ? "H" : "-", translucent ? "t" : "-");
             }
-        };
+        }
+
+        public class Frame
+        {
+            public List<Layer> layers;
+            public ushort ticks;
+
+            public byte extrasize;
+            public byte[] extradata;
+
+            public static Frame Blank()
+            {
+                Frame frame = new Frame();
+                frame.layers = new List<Layer>();
+                frame.ticks = 0;
+                frame.extrasize = 0;
+                frame.extradata = new byte[2];
+
+                Layer layer = new Layer();
+                frame.layers.Add(layer);
+
+                return frame;
+            }
+
+            public Frame Clone()
+            {
+                Frame frame = new Frame();
+                frame.layers = new List<Layer>();
+                foreach (var layer in layers)
+                    frame.layers.Add(layer.Clone());
+                frame.ticks = ticks;
+                frame.extrasize = extrasize;
+                frame.extradata = extradata.ToArray();
+
+                return frame;
+            }
+        }
+
+        public class Sprite
+        {
+            public List<Frame> frames;
+
+            public static Sprite Blank()
+            {
+                Sprite sprite = new Sprite();
+                sprite.frames = new List<Frame>();
+                sprite.frames.Add(Frame.Blank());
+
+                return sprite;
+            }
+
+            public Sprite Clone()
+            {
+                Sprite sprite = new Sprite();
+                sprite.frames = new List<Frame>();
+                foreach (var frame in frames)
+                    sprite.frames.Add(frame.Clone());
+
+                return sprite;
+            }
+        }
 
         #endregion
 
@@ -214,7 +278,6 @@ namespace DB_KAI_RPG
             Stream stream = new MemoryStream(chrData);
             BinaryReader br = new BinaryReader(stream);
 
-            // This stuff is still not working properly
             sprites = new List<Sprite>();
             if ((chrFlags & 2) == 2)
             {
@@ -237,7 +300,6 @@ namespace DB_KAI_RPG
                     br.BaseStream.Seek(animOffsetPos + offsets[i], SeekOrigin.Begin);
                     Sprite sprite = new Sprite();
                     sprite.frames = new List<Frame>();
-                    sprite.debugOffset = br.BaseStream.Position;
 
                     while(true)
                     {
@@ -250,7 +312,6 @@ namespace DB_KAI_RPG
                             frame.ticks = br.ReadUInt16();
                             numLayers = br.ReadByte();
 
-                            frame.extended = true;
                             frame.layers = new List<Layer>();
                             for (int j = 0; j < numLayers; j++)
                             {
@@ -259,16 +320,16 @@ namespace DB_KAI_RPG
                                 ushort halfwd1 = br.ReadUInt16();
                                 ushort halfwd2 = br.ReadUInt16();
 
-                                layer.x = ((halfwd1 & 0x800) != 0) ? (int)((halfwd1 & 0xFFF) | 0xFFFFF000) : (halfwd1 & 0x7FF);
-                                layer.y = ((halfwd0 & 0x200) != 0) ? (int)((halfwd0 & 0x3FF) | 0xFFFFFC00) : (halfwd0 & 0x1FF);
+                                layer.x = (int)(halfwd1 & 0xFFF) << 20 >> 20;
+                                layer.y = (int)(halfwd0 & 0x3FF) << 22 >> 22;
                                 layer.tile = halfwd2;
-                                layer.objsize = (byte)((halfwd1 & 0xC000) >> 14);
-                                layer.objshape = (byte)((halfwd0 & 0xC000) >> 14);
+                                layer.objsize = ((halfwd0 & 0xC000) >> 12) | ((halfwd1 & 0xC000) >> 14);
                                 layer.vflip = (halfwd1 & 0x2000) != 0;
                                 layer.hflip = (halfwd1 & 0x1000) != 0;
                                 layer.translucent = (halfwd0 & 0x0400) != 0;
 
-                                layer.datastr = string.Format("{0:X04}:{1:X04}:{2:X04}", halfwd0, halfwd1, halfwd2);
+                                if ((halfwd0 & 0x3800) != 0) throw new FormatException("Wow!");
+
                                 frame.layers.Add(layer);
                             }
                         }
@@ -276,7 +337,6 @@ namespace DB_KAI_RPG
                         {
                             frame.ticks = br.ReadByte();
 
-                            frame.extended = false;
                             frame.layers = new List<Layer>();
                             for (int j = 0; j < numLayers; j++)
                             {
@@ -289,37 +349,155 @@ namespace DB_KAI_RPG
                                 layer.x = byte0;
                                 layer.y = byte1;
                                 layer.tile = byte2;
-                                layer.objsize = (byte)((byte3 & 0xC0) >> 6);
-                                layer.objshape = (byte)((byte3 & 0x0C) >> 2);
+                                layer.objsize = (byte3 & 0x0C) | ((byte3 & 0xC0) >> 6);
                                 layer.vflip = (byte3 & 0x20) != 0;
                                 layer.hflip = (byte3 & 0x10) != 0;
                                 layer.translucent = (byte3 & 0x02) != 0;
                                 if ((byte3 & 0x01) != 0) layer.tile += 256;
 
-                                layer.datastr = string.Format("{0:X02}:{1:X02}:{2:X02}:{3:X02}", byte0, byte1, byte2, byte3);
                                 frame.layers.Add(layer);
                             }
                         }
+                        long extrabegin = br.BaseStream.Position;
+                        frame.extrasize = br.ReadByte();
+                        long extraend = (extrabegin + frame.extrasize * 3 + 2) & ~1; // weird...
+                        int exbytes = (int)(extraend - extrabegin - 1);
+
+                        frame.extradata = br.ReadBytes(exbytes);
+
+                        if (frame.extradata.Length != exbytes)
+                            throw new FormatException("Extradata does not match");
+
                         sprite.frames.Add(frame);
-
-                        // Discard extra data for now...
-                        int extra = br.ReadByte();
-                        int exbytes = (extra * 3 + 2) & ~1;  // weird...
-                        for (int j = 0; j < exbytes - 1; j++) br.ReadByte();
                     }
+                    byte zeroValue2 = br.ReadByte();
+                    //if (zeroValue2 != 0)
+                    //    MessageBox.Show(string.Format("{0}:Zero expected at end: {1:X02} @ {2:X08}", i+1, zeroValue2, chrDataPos + br.BaseStream.Position));
 
+                    long remain;
                     if (i + 1 < numSprites)
                     {
-                        sprite.debugRemain = animOffsetPos + offsets[i + 1] - br.BaseStream.Position;
+                        remain = animOffsetPos + offsets[i + 1] - br.BaseStream.Position;
                     }
                     else
                     {
-                        sprite.debugRemain = br.BaseStream.Length - br.BaseStream.Position;
+                        remain = br.BaseStream.Length - br.BaseStream.Position;
                     }
+                    //if (remain != 0)
+                    //    MessageBox.Show(string.Format("{0}:Remain: {1} bytes @ {2:X08}", i+1, remain, chrDataPos + br.BaseStream.Position));
 
                     sprites.Add(sprite);
                 }
             }
+        }
+
+        public void EncodeCharacterData()
+        {
+            MemoryStream ms = new MemoryStream();
+            BinaryWriter bw = new BinaryWriter(ms);
+
+            if ((chrFlags & 2) == 2)
+            {
+                ushort numSprites = (ushort)sprites.Count;
+
+                // Write data header
+                bw.Write(numSprites);
+                bw.Write((ushort)0);
+
+                // Write dummy sprites offset
+                ushort[] offsets = new ushort[numSprites];
+                for (int i = 0; i < numSprites; i++)
+                    bw.Write((ushort)0);
+
+                // Write sprites data
+                for (int i = 0; i < numSprites; i++)
+                {
+                    Sprite sprite = sprites[i];
+                    offsets[i] = (ushort)(bw.BaseStream.Position - 4);
+
+                    List<Frame> frames = sprite.frames;
+                    for (int f = 0; f < frames.Count; f++)
+                    {
+                        Frame frame = frames[f];
+                        int numLayers = frame.layers.Count;
+
+                        // Figure out if going to use extended format
+                        bool extended = false;
+                        if (numLayers == 16)
+                            extended = true;
+                        if (frame.ticks >= 256)
+                            extended = true;
+                        for (int j = 0; j < numLayers; j++)
+                        {
+                            Layer layer = frame.layers[j];
+                            if (layer.x < -128 || layer.x > 127) extended = true;
+                            if (layer.y < -128 || layer.y > 127) extended = true;
+                            if (layer.tile >= 512) extended = true;
+                        }
+
+                        if (extended)
+                        {
+                            bw.Write((byte)16);
+                            bw.Write((ushort)frame.ticks);
+                            bw.Write((byte)numLayers);
+
+                            for (int li = 0; li < numLayers; li++)
+                            {
+                                Layer layer = frame.layers[li];
+
+                                ushort halfwd0 = (ushort)((layer.y & 0x3FF) | ((layer.objsize & 12) << 12) | (layer.translucent ? 0x0400 : 0));
+                                ushort halfwd1 = (ushort)((layer.x & 0xFFF) | ((layer.objsize & 3) << 14) | (layer.hflip ? 0x1000 : 0) | (layer.vflip ? 0x2000 : 0));
+                                ushort halfwd2 = layer.tile;
+
+                                bw.Write(halfwd0);
+                                bw.Write(halfwd1);
+                                bw.Write(halfwd2);
+                            }
+                        }
+                        else
+                        {
+                            bw.Write((byte)numLayers);
+                            bw.Write((byte)frame.ticks);
+
+                            for (int li = 0; li < numLayers; li++)
+                            {
+                                Layer layer = frame.layers[li];
+
+                                sbyte byte0 = (sbyte)layer.x;
+                                sbyte byte1 = (sbyte)layer.y;
+                                byte byte2 = (byte)layer.tile;
+                                byte byte3 = (byte)((layer.objsize & 12) | ((layer.objsize & 3) << 6) | (layer.hflip ? 0x10 : 0) | (layer.vflip ? 0x20 : 0) | (layer.translucent ? 0x02 : 0));
+                                if (layer.tile >= 256) byte3 |= 0x01;
+
+                                bw.Write(byte0);
+                                bw.Write(byte1);
+                                bw.Write(byte2);
+                                bw.Write(byte3);
+                            }
+                        }
+
+                        long extrabegin = bw.BaseStream.Position;
+                        bw.Write(frame.extrasize);
+                        long extraend = (extrabegin + frame.extrasize * 3 + 2) & ~1; // weird...
+                        int exbytes = (int)(extraend - extrabegin - 1);
+
+                        byte[] extradata = frame.extradata;
+                        Array.Resize(ref extradata, exbytes);
+                        bw.Write(extradata);
+                    }
+
+                    bw.Write((byte)0);
+                    bw.Write((byte)0);
+                }
+
+                // Rewrite address table
+                bw.BaseStream.Seek(4, SeekOrigin.Begin);
+                for (int i = 0; i < numSprites; i++)
+                    bw.Write(offsets[i]);
+                bw.BaseStream.Seek(0, SeekOrigin.End);
+            }
+
+            chrData = ms.ToArray();
         }
 
         public void DrawLayer(Bitmap bmp, int offset_x, int offset_y, ref Layer part, int paletteSlot = 0, bool highlighted = true)
@@ -373,6 +551,5 @@ namespace DB_KAI_RPG
                 }
             }
         }
-
     }
 }
