@@ -202,6 +202,43 @@ namespace DB_KAI_RPG
 
         #endregion
 
+        public CHR(int numPals, int numTiles)
+        {
+            this.fileName = "";
+            this.id = -1;
+
+            // Create dummy CHR
+            this.chrFlags = 0;
+            this.palette = new Color[numPals][];
+            for (int i = 0; i < numPals; i++)
+            {
+                this.palette[i] = new Color[16];
+                for (int j = 0; j < 16; j++) this.palette[i][j] = Color.Black;
+            }
+            this.tiles = new byte[numTiles][];
+            for (int i = 0; i < numTiles; i++) this.tiles[i] = new byte[32];
+
+            chrData = new byte[0];
+            chrDataPos = 0;
+
+            // Decode character data
+            DecodeCharacterData();
+        }
+
+        public CHR(BinaryReader br)
+        {
+            this.fileName = "";
+            this.id = -1;
+            try
+            {
+                Read(br, false);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         public CHR(string file, int id, string fileName = "")  {
             this.fileName = fileName;
             this.id = id;
@@ -218,7 +255,19 @@ namespace DB_KAI_RPG
         public void Read(string fileIn)
         {
             BinaryReader br = new BinaryReader(File.OpenRead(fileIn));
+            Read(br);
+            br.Close();
+        }
 
+        public void Write(string fileOut)
+        {
+            BinaryWriter bw = new BinaryWriter(File.OpenWrite(fileOut));
+            Write(bw);
+            bw.Close();
+        }
+
+        public void Read(BinaryReader br, bool readAll = true)
+        {
             // Header
             byte[] id = br.ReadBytes(4);
             if (id[0] != 'd' || id[1] != 'C' || id[2] != 'H' || id[3] != 'R')
@@ -240,19 +289,23 @@ namespace DB_KAI_RPG
                 tiles[i] = br.ReadBytes(32);
 
             // Character data
-            chrDataPos = br.BaseStream.Position;
-            chrData = br.ReadBytes((int)(br.BaseStream.Length - chrDataPos));
-
-            br.Close();
+            if (readAll) {
+                // TODO figure out length
+                chrDataPos = br.BaseStream.Position;
+                chrData = br.ReadBytes((int)(br.BaseStream.Length - chrDataPos));
+            }
+            else
+			{
+                chrDataPos = 0;
+                chrData = new byte[0];
+            }
 
             // Decode character data
             DecodeCharacterData();
         }
 
-        public void Write(string fileOut)
+        public void Write(BinaryWriter bw)
         {
-            BinaryWriter bw = new BinaryWriter(File.OpenWrite(fileOut));
-
             // Header
             bw.Write('d'); bw.Write('C'); bw.Write('H'); bw.Write('R');
             bw.Write(chrFlags);
@@ -269,125 +322,124 @@ namespace DB_KAI_RPG
 
             // Character data
             bw.Write(chrData);
-
-            bw.Close();
         }
         
         public void DecodeCharacterData()
         {
+            if ((chrFlags & 2) != 2) return;
+            if (chrData.Length == 0) return;
+
             Stream stream = new MemoryStream(chrData);
             BinaryReader br = new BinaryReader(stream);
 
             sprites = new List<Sprite>();
-            if ((chrFlags & 2) == 2)
+
+            // Read data header
+            ushort numSprites = br.ReadUInt16();
+            ushort zeroValue = br.ReadUInt16();
+            if (zeroValue != 0)
+                throw new FormatException("Zero expected in data");
+
+            long animOffsetPos = br.BaseStream.Position;
+
+            // Read sprites offset
+            ushort[] offsets = new ushort[numSprites];
+            for (int i = 0; i < numSprites; i++)
+                offsets[i] = br.ReadUInt16();
+
+            // Read sprites data
+            for (int i = 0; i < numSprites; i++)
             {
-                // Read data header
-                ushort numSprites = br.ReadUInt16();
-                ushort zeroValue = br.ReadUInt16();
-                if (zeroValue != 0)
-                    throw new FormatException("Zero expected in data");
+                br.BaseStream.Seek(animOffsetPos + offsets[i], SeekOrigin.Begin);
+                Sprite sprite = new Sprite();
+                sprite.frames = new List<Frame>();
 
-                long animOffsetPos = br.BaseStream.Position;
-
-                // Read sprites offset
-                ushort[] offsets = new ushort[numSprites];
-                for (int i = 0; i < numSprites; i++)
-                    offsets[i] = br.ReadUInt16();
-
-                // Read sprites data
-                for (int i = 0; i < numSprites; i++)
+                while (true)
                 {
-                    br.BaseStream.Seek(animOffsetPos + offsets[i], SeekOrigin.Begin);
-                    Sprite sprite = new Sprite();
-                    sprite.frames = new List<Frame>();
+                    Frame frame = new Frame();
+                    int numLayers = br.ReadByte();
+                    if (numLayers == 0) break;
 
-                    while(true)
+                    if (numLayers == 16)
                     {
-                        Frame frame = new Frame();
-                        int numLayers = br.ReadByte();
-                        if (numLayers == 0) break;
+                        frame.ticks = br.ReadUInt16();
+                        numLayers = br.ReadByte();
 
-                        if (numLayers == 16)
+                        frame.layers = new List<Layer>();
+                        for (int j = 0; j < numLayers; j++)
                         {
-                            frame.ticks = br.ReadUInt16();
-                            numLayers = br.ReadByte();
+                            Layer layer = new Layer();
+                            ushort halfwd0 = br.ReadUInt16();
+                            ushort halfwd1 = br.ReadUInt16();
+                            ushort halfwd2 = br.ReadUInt16();
 
-                            frame.layers = new List<Layer>();
-                            for (int j = 0; j < numLayers; j++)
-                            {
-                                Layer layer = new Layer();
-                                ushort halfwd0 = br.ReadUInt16();
-                                ushort halfwd1 = br.ReadUInt16();
-                                ushort halfwd2 = br.ReadUInt16();
+                            layer.x = (int)(halfwd1 & 0xFFF) << 20 >> 20;
+                            layer.y = (int)(halfwd0 & 0x3FF) << 22 >> 22;
+                            layer.tile = halfwd2;
+                            layer.objsize = ((halfwd0 & 0xC000) >> 12) | ((halfwd1 & 0xC000) >> 14);
+                            layer.vflip = (halfwd1 & 0x2000) != 0;
+                            layer.hflip = (halfwd1 & 0x1000) != 0;
+                            layer.translucent = (halfwd0 & 0x0400) != 0;
 
-                                layer.x = (int)(halfwd1 & 0xFFF) << 20 >> 20;
-                                layer.y = (int)(halfwd0 & 0x3FF) << 22 >> 22;
-                                layer.tile = halfwd2;
-                                layer.objsize = ((halfwd0 & 0xC000) >> 12) | ((halfwd1 & 0xC000) >> 14);
-                                layer.vflip = (halfwd1 & 0x2000) != 0;
-                                layer.hflip = (halfwd1 & 0x1000) != 0;
-                                layer.translucent = (halfwd0 & 0x0400) != 0;
+                            //if ((halfwd0 & 0x3800) != 0) throw new FormatException("Unexpected flags");
 
-                                if ((halfwd0 & 0x3800) != 0) throw new FormatException("Wow!");
-
-                                frame.layers.Add(layer);
-                            }
+                            frame.layers.Add(layer);
                         }
-                        else
-                        {
-                            frame.ticks = br.ReadByte();
-
-                            frame.layers = new List<Layer>();
-                            for (int j = 0; j < numLayers; j++)
-                            {
-                                Layer layer = new Layer();
-                                sbyte byte0 = br.ReadSByte();
-                                sbyte byte1 = br.ReadSByte();
-                                byte byte2 = br.ReadByte();
-                                byte byte3 = br.ReadByte();
-
-                                layer.x = byte0;
-                                layer.y = byte1;
-                                layer.tile = byte2;
-                                layer.objsize = (byte3 & 0x0C) | ((byte3 & 0xC0) >> 6);
-                                layer.vflip = (byte3 & 0x20) != 0;
-                                layer.hflip = (byte3 & 0x10) != 0;
-                                layer.translucent = (byte3 & 0x02) != 0;
-                                if ((byte3 & 0x01) != 0) layer.tile += 256;
-
-                                frame.layers.Add(layer);
-                            }
-                        }
-                        long extrabegin = br.BaseStream.Position;
-                        frame.extrasize = br.ReadByte();
-                        long extraend = (extrabegin + frame.extrasize * 3 + 2) & ~1; // weird...
-                        int exbytes = (int)(extraend - extrabegin - 1);
-
-                        frame.extradata = br.ReadBytes(exbytes);
-
-                        if (frame.extradata.Length != exbytes)
-                            throw new FormatException("Extradata does not match");
-
-                        sprite.frames.Add(frame);
-                    }
-                    byte zeroValue2 = br.ReadByte();
-                    //if (zeroValue2 != 0)
-                    //    MessageBox.Show(string.Format("{0}:Zero expected at end: {1:X02} @ {2:X08}", i+1, zeroValue2, chrDataPos + br.BaseStream.Position));
-
-                    long remain;
-                    if (i + 1 < numSprites)
-                    {
-                        remain = animOffsetPos + offsets[i + 1] - br.BaseStream.Position;
                     }
                     else
                     {
-                        remain = br.BaseStream.Length - br.BaseStream.Position;
-                    }
-                    //if (remain != 0)
-                    //    MessageBox.Show(string.Format("{0}:Remain: {1} bytes @ {2:X08}", i+1, remain, chrDataPos + br.BaseStream.Position));
+                        frame.ticks = br.ReadByte();
 
-                    sprites.Add(sprite);
+                        frame.layers = new List<Layer>();
+                        for (int j = 0; j < numLayers; j++)
+                        {
+                            Layer layer = new Layer();
+                            sbyte byte0 = br.ReadSByte();
+                            sbyte byte1 = br.ReadSByte();
+                            byte byte2 = br.ReadByte();
+                            byte byte3 = br.ReadByte();
+
+                            layer.x = byte0;
+                            layer.y = byte1;
+                            layer.tile = byte2;
+                            layer.objsize = (byte3 & 0x0C) | ((byte3 & 0xC0) >> 6);
+                            layer.vflip = (byte3 & 0x20) != 0;
+                            layer.hflip = (byte3 & 0x10) != 0;
+                            layer.translucent = (byte3 & 0x02) != 0;
+                            if ((byte3 & 0x01) != 0) layer.tile += 256;
+
+                            frame.layers.Add(layer);
+                        }
+                    }
+                    long extrabegin = br.BaseStream.Position;
+                    frame.extrasize = br.ReadByte();
+                    long extraend = (extrabegin + frame.extrasize * 3 + 2) & ~1; // weird...
+                    int exbytes = (int)(extraend - extrabegin - 1);
+
+                    frame.extradata = br.ReadBytes(exbytes);
+
+                    if (frame.extradata.Length != exbytes)
+                        throw new FormatException("Extradata does not match");
+
+                    sprite.frames.Add(frame);
                 }
+                byte zeroValue2 = br.ReadByte();
+                //if (zeroValue2 != 0)
+                //    MessageBox.Show(string.Format("{0}:Zero expected at end: {1:X02} @ {2:X08}", i+1, zeroValue2, chrDataPos + br.BaseStream.Position));
+
+                long remain;
+                if (i + 1 < numSprites)
+                {
+                    remain = animOffsetPos + offsets[i + 1] - br.BaseStream.Position;
+                }
+                else
+                {
+                    remain = br.BaseStream.Length - br.BaseStream.Position;
+                }
+                //if (remain != 0)
+                //    MessageBox.Show(string.Format("{0}:Remain: {1} bytes @ {2:X08}", i+1, remain, chrDataPos + br.BaseStream.Position));
+
+                sprites.Add(sprite);
             }
         }
 
