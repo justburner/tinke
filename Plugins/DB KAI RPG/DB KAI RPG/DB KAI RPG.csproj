@@ -54,6 +54,19 @@
     <Compile Include="A_CHRControl.designer.cs">
       <DependentUpon>A_CHRControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="BST.cs" />
+    <Compile Include="BSTControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="BSTControl.designer.cs">
+      <DependentUpon>BSTControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BSTLayerCode.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BSTLayerCode.Designer.cs">
+      <DependentUpon>BSTLayerCode.cs</DependentUpon>
+    </Compile>
     <Compile Include="CHR.cs" />
     <Compile Include="IMA.cs" />
     <Compile Include="IMAControl.cs">
@@ -97,6 +110,12 @@
   <ItemGroup>
     <EmbeddedResource Include="A_CHRControl.resx">
       <DependentUpon>A_CHRControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BSTControl.resx">
+      <DependentUpon>BSTControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BSTLayerCode.resx">
+      <DependentUpon>BSTLayerCode.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="IMAControl.resx">
       <DependentUpon>IMAControl.cs</DependentUpon>

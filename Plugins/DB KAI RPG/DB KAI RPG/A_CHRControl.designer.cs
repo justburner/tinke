@@ -34,7 +34,7 @@ namespace DB_KAI_RPG
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.checkMaxTiles = new System.Windows.Forms.CheckBox();
 			this.label1 = new System.Windows.Forms.Label();
-			this.contextMenuImps = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.contextMenuBsts = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.moveUpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.moveDownToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
@@ -60,7 +60,7 @@ namespace DB_KAI_RPG
 			this.labelNumPalettes = new System.Windows.Forms.Label();
 			this.numericPalette = new System.Windows.Forms.NumericUpDown();
 			((System.ComponentModel.ISupportInitialize)(this.pictureTileset)).BeginInit();
-			this.contextMenuImps.SuspendLayout();
+			this.contextMenuBsts.SuspendLayout();
 			this.groupBox3.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.numericMaxTiles)).BeginInit();
@@ -87,7 +87,7 @@ namespace DB_KAI_RPG
 			this.checkMaxTiles.Location = new System.Drawing.Point(21, 45);
 			this.checkMaxTiles.Name = "checkMaxTiles";
 			this.checkMaxTiles.Size = new System.Drawing.Size(78, 17);
-			this.checkMaxTiles.TabIndex = 7;
+			this.checkMaxTiles.TabIndex = 2;
 			this.checkMaxTiles.Text = "Max Tiles*:";
 			this.toolTip.SetToolTip(this.checkMaxTiles, "Max number of tiles on importing.");
 			this.checkMaxTiles.UseVisualStyleBackColor = true;
@@ -103,15 +103,15 @@ namespace DB_KAI_RPG
 			this.label1.Text = "Columns:";
 			this.toolTip.SetToolTip(this.label1, "Number of columns on preview and exporting.");
 			// 
-			// contextMenuImps
+			// contextMenuBsts
 			// 
-			this.contextMenuImps.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+			this.contextMenuBsts.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.moveUpToolStripMenuItem,
             this.moveDownToolStripMenuItem,
             this.toolStripSeparator1,
             this.manageToolStripMenuItem});
-			this.contextMenuImps.Name = "contextMenuLayers";
-			this.contextMenuImps.Size = new System.Drawing.Size(139, 76);
+			this.contextMenuBsts.Name = "contextMenuLayers";
+			this.contextMenuBsts.Size = new System.Drawing.Size(139, 76);
 			// 
 			// moveUpToolStripMenuItem
 			// 
@@ -165,7 +165,7 @@ namespace DB_KAI_RPG
 			this.groupBox3.Location = new System.Drawing.Point(264, 3);
 			this.groupBox3.Name = "groupBox3";
 			this.groupBox3.Size = new System.Drawing.Size(245, 255);
-			this.groupBox3.TabIndex = 9;
+			this.groupBox3.TabIndex = 0;
 			this.groupBox3.TabStop = false;
 			this.groupBox3.Text = "Characters Archive";
 			// 
@@ -174,7 +174,7 @@ namespace DB_KAI_RPG
 			this.button4.Location = new System.Drawing.Point(139, 226);
 			this.button4.Name = "button4";
 			this.button4.Size = new System.Drawing.Size(100, 23);
-			this.button4.TabIndex = 13;
+			this.button4.TabIndex = 4;
 			this.button4.Text = "Delete Selected";
 			this.button4.UseVisualStyleBackColor = true;
 			this.button4.Click += new System.EventHandler(this.deleteSelectedToolStripMenuItem_Click);
@@ -184,7 +184,7 @@ namespace DB_KAI_RPG
 			this.button3.Location = new System.Drawing.Point(139, 200);
 			this.button3.Name = "button3";
 			this.button3.Size = new System.Drawing.Size(100, 23);
-			this.button3.TabIndex = 12;
+			this.button3.TabIndex = 2;
 			this.button3.Text = "Create New";
 			this.button3.UseVisualStyleBackColor = true;
 			this.button3.Click += new System.EventHandler(this.createNewToolStripMenuItem_Click);
@@ -194,7 +194,7 @@ namespace DB_KAI_RPG
 			this.button2.Location = new System.Drawing.Point(6, 226);
 			this.button2.Name = "button2";
 			this.button2.Size = new System.Drawing.Size(100, 23);
-			this.button2.TabIndex = 11;
+			this.button2.TabIndex = 3;
 			this.button2.Text = "Move Down";
 			this.button2.UseVisualStyleBackColor = true;
 			this.button2.Click += new System.EventHandler(this.moveDownToolStripMenuItem_Click);
@@ -204,19 +204,19 @@ namespace DB_KAI_RPG
 			this.button1.Location = new System.Drawing.Point(6, 200);
 			this.button1.Name = "button1";
 			this.button1.Size = new System.Drawing.Size(100, 23);
-			this.button1.TabIndex = 10;
+			this.button1.TabIndex = 1;
 			this.button1.Text = "Move Up";
 			this.button1.UseVisualStyleBackColor = true;
 			this.button1.Click += new System.EventHandler(this.moveUpToolStripMenuItem_Click);
 			// 
 			// listBoxChrs
 			// 
-			this.listBoxChrs.ContextMenuStrip = this.contextMenuImps;
+			this.listBoxChrs.ContextMenuStrip = this.contextMenuBsts;
 			this.listBoxChrs.FormattingEnabled = true;
 			this.listBoxChrs.Location = new System.Drawing.Point(6, 19);
 			this.listBoxChrs.Name = "listBoxChrs";
 			this.listBoxChrs.Size = new System.Drawing.Size(233, 173);
-			this.listBoxChrs.TabIndex = 9;
+			this.listBoxChrs.TabIndex = 0;
 			this.listBoxChrs.SelectedIndexChanged += new System.EventHandler(this.listBoxChrs_SelectedIndexChanged);
 			// 
 			// groupBox2
@@ -230,7 +230,7 @@ namespace DB_KAI_RPG
 			this.groupBox2.Location = new System.Drawing.Point(3, 359);
 			this.groupBox2.Name = "groupBox2";
 			this.groupBox2.Size = new System.Drawing.Size(192, 101);
-			this.groupBox2.TabIndex = 11;
+			this.groupBox2.TabIndex = 2;
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "Tileset (Selected Image)";
 			// 
@@ -249,7 +249,7 @@ namespace DB_KAI_RPG
             0});
 			this.numericMaxTiles.Name = "numericMaxTiles";
 			this.numericMaxTiles.Size = new System.Drawing.Size(60, 20);
-			this.numericMaxTiles.TabIndex = 6;
+			this.numericMaxTiles.TabIndex = 3;
 			this.numericMaxTiles.Value = new decimal(new int[] {
             2048,
             0,
@@ -284,7 +284,7 @@ namespace DB_KAI_RPG
 			this.buttonImportTiles.Location = new System.Drawing.Point(88, 71);
 			this.buttonImportTiles.Name = "buttonImportTiles";
 			this.buttonImportTiles.Size = new System.Drawing.Size(75, 23);
-			this.buttonImportTiles.TabIndex = 4;
+			this.buttonImportTiles.TabIndex = 5;
 			this.buttonImportTiles.Text = "Import";
 			this.buttonImportTiles.UseVisualStyleBackColor = true;
 			// 
@@ -293,7 +293,7 @@ namespace DB_KAI_RPG
 			this.buttonExportTiles.Location = new System.Drawing.Point(7, 71);
 			this.buttonExportTiles.Name = "buttonExportTiles";
 			this.buttonExportTiles.Size = new System.Drawing.Size(75, 23);
-			this.buttonExportTiles.TabIndex = 3;
+			this.buttonExportTiles.TabIndex = 4;
 			this.buttonExportTiles.Text = "Export";
 			this.buttonExportTiles.UseVisualStyleBackColor = true;
 			// 
@@ -308,7 +308,7 @@ namespace DB_KAI_RPG
 			this.groupBox1.Location = new System.Drawing.Point(3, 264);
 			this.groupBox1.Name = "groupBox1";
 			this.groupBox1.Size = new System.Drawing.Size(192, 89);
-			this.groupBox1.TabIndex = 10;
+			this.groupBox1.TabIndex = 1;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Palette (Selected Image)";
 			// 
@@ -378,7 +378,7 @@ namespace DB_KAI_RPG
 			this.Name = "A_CHRControl";
 			this.Size = new System.Drawing.Size(512, 512);
 			((System.ComponentModel.ISupportInitialize)(this.pictureTileset)).EndInit();
-			this.contextMenuImps.ResumeLayout(false);
+			this.contextMenuBsts.ResumeLayout(false);
 			this.groupBox3.ResumeLayout(false);
 			this.groupBox2.ResumeLayout(false);
 			this.groupBox2.PerformLayout();
@@ -395,7 +395,7 @@ namespace DB_KAI_RPG
 		#endregion
 		private System.Windows.Forms.PictureBox pictureTileset;
 		private System.Windows.Forms.ToolTip toolTip;
-		private System.Windows.Forms.ContextMenuStrip contextMenuImps;
+		private System.Windows.Forms.ContextMenuStrip contextMenuBsts;
 		private System.Windows.Forms.ToolStripMenuItem moveUpToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem moveDownToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;

@@ -71,23 +71,23 @@ namespace DB_KAI_RPG
 			this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.pasteBeforeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.pasteAfterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+			this.newBlankLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
 			this.manageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.newFrameAfterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.newFrameBeforeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.newFrameAfterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.deleteThisFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
-			this.newSpriteAfterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.newSpriteBeforeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.newSpriteAfterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.deleteThisSpriteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.labelNumSprites = new System.Windows.Forms.Label();
 			this.numericSprite = new System.Windows.Forms.NumericUpDown();
 			this.label2 = new System.Windows.Forms.Label();
 			this.labelDebug = new System.Windows.Forms.Label();
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
-			this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.newBlankLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
 			((System.ComponentModel.ISupportInitialize)(this.pictureSprite)).BeginInit();
 			this.groupBox1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.picturePalette)).BeginInit();
@@ -217,7 +217,7 @@ namespace DB_KAI_RPG
 			this.checkMaxTiles.Location = new System.Drawing.Point(21, 45);
 			this.checkMaxTiles.Name = "checkMaxTiles";
 			this.checkMaxTiles.Size = new System.Drawing.Size(78, 17);
-			this.checkMaxTiles.TabIndex = 7;
+			this.checkMaxTiles.TabIndex = 2;
 			this.checkMaxTiles.Text = "Max Tiles*:";
 			this.toolTip.SetToolTip(this.checkMaxTiles, "Max number of tiles on importing.");
 			this.checkMaxTiles.UseVisualStyleBackColor = true;
@@ -238,7 +238,7 @@ namespace DB_KAI_RPG
             0});
 			this.numericMaxTiles.Name = "numericMaxTiles";
 			this.numericMaxTiles.Size = new System.Drawing.Size(60, 20);
-			this.numericMaxTiles.TabIndex = 6;
+			this.numericMaxTiles.TabIndex = 3;
 			this.numericMaxTiles.Value = new decimal(new int[] {
             2048,
             0,
@@ -283,7 +283,7 @@ namespace DB_KAI_RPG
 			this.buttonImportTiles.Location = new System.Drawing.Point(88, 71);
 			this.buttonImportTiles.Name = "buttonImportTiles";
 			this.buttonImportTiles.Size = new System.Drawing.Size(75, 23);
-			this.buttonImportTiles.TabIndex = 4;
+			this.buttonImportTiles.TabIndex = 5;
 			this.buttonImportTiles.Text = "Import";
 			this.buttonImportTiles.UseVisualStyleBackColor = true;
 			this.buttonImportTiles.Click += new System.EventHandler(this.buttonImportTiles_Click);
@@ -293,7 +293,7 @@ namespace DB_KAI_RPG
 			this.buttonExportTiles.Location = new System.Drawing.Point(7, 71);
 			this.buttonExportTiles.Name = "buttonExportTiles";
 			this.buttonExportTiles.Size = new System.Drawing.Size(75, 23);
-			this.buttonExportTiles.TabIndex = 3;
+			this.buttonExportTiles.TabIndex = 4;
 			this.buttonExportTiles.Text = "Export";
 			this.buttonExportTiles.UseVisualStyleBackColor = true;
 			this.buttonExportTiles.Click += new System.EventHandler(this.buttonExportTiles_Click);
@@ -332,7 +332,7 @@ namespace DB_KAI_RPG
 			this.buttonRevert.Location = new System.Drawing.Point(229, 208);
 			this.buttonRevert.Name = "buttonRevert";
 			this.buttonRevert.Size = new System.Drawing.Size(75, 23);
-			this.buttonRevert.TabIndex = 21;
+			this.buttonRevert.TabIndex = 19;
 			this.buttonRevert.Text = "Revert";
 			this.buttonRevert.UseVisualStyleBackColor = true;
 			this.buttonRevert.Click += new System.EventHandler(this.buttonRevert_Click);
@@ -347,7 +347,7 @@ namespace DB_KAI_RPG
             0});
 			this.numericFrameTicks.Name = "numericFrameTicks";
 			this.numericFrameTicks.Size = new System.Drawing.Size(60, 20);
-			this.numericFrameTicks.TabIndex = 20;
+			this.numericFrameTicks.TabIndex = 7;
 			this.numericFrameTicks.ValueChanged += new System.EventHandler(this.numericFrameTicks_ValueChanged);
 			// 
 			// label6
@@ -356,7 +356,7 @@ namespace DB_KAI_RPG
 			this.label6.Location = new System.Drawing.Point(158, 47);
 			this.label6.Name = "label6";
 			this.label6.Size = new System.Drawing.Size(36, 13);
-			this.label6.TabIndex = 19;
+			this.label6.TabIndex = 6;
 			this.label6.Text = "Ticks:";
 			this.toolTip.SetToolTip(this.label6, "Number of columns on preview and exporting.");
 			// 
@@ -365,7 +365,7 @@ namespace DB_KAI_RPG
 			this.buttonSave.Location = new System.Drawing.Point(154, 208);
 			this.buttonSave.Name = "buttonSave";
 			this.buttonSave.Size = new System.Drawing.Size(75, 23);
-			this.buttonSave.TabIndex = 6;
+			this.buttonSave.TabIndex = 18;
 			this.buttonSave.Text = "Save";
 			this.buttonSave.UseVisualStyleBackColor = true;
 			this.buttonSave.Click += new System.EventHandler(this.buttonSave_Click);
@@ -376,7 +376,7 @@ namespace DB_KAI_RPG
 			this.checkBoxTranslucent.Location = new System.Drawing.Point(154, 185);
 			this.checkBoxTranslucent.Name = "checkBoxTranslucent";
 			this.checkBoxTranslucent.Size = new System.Drawing.Size(82, 17);
-			this.checkBoxTranslucent.TabIndex = 18;
+			this.checkBoxTranslucent.TabIndex = 17;
 			this.checkBoxTranslucent.Text = "Translucent";
 			this.checkBoxTranslucent.UseVisualStyleBackColor = true;
 			this.checkBoxTranslucent.CheckStateChanged += new System.EventHandler(this.checkBoxTranslucent_CheckStateChanged);
@@ -387,7 +387,7 @@ namespace DB_KAI_RPG
 			this.checkBoxVFlip.Location = new System.Drawing.Point(229, 162);
 			this.checkBoxVFlip.Name = "checkBoxVFlip";
 			this.checkBoxVFlip.Size = new System.Drawing.Size(67, 17);
-			this.checkBoxVFlip.TabIndex = 17;
+			this.checkBoxVFlip.TabIndex = 16;
 			this.checkBoxVFlip.Text = "Vert. Flip";
 			this.checkBoxVFlip.UseVisualStyleBackColor = true;
 			this.checkBoxVFlip.CheckStateChanged += new System.EventHandler(this.checkBoxVFlip_CheckStateChanged);
@@ -398,7 +398,7 @@ namespace DB_KAI_RPG
 			this.checkBoxHFlip.Location = new System.Drawing.Point(154, 162);
 			this.checkBoxHFlip.Name = "checkBoxHFlip";
 			this.checkBoxHFlip.Size = new System.Drawing.Size(67, 17);
-			this.checkBoxHFlip.TabIndex = 16;
+			this.checkBoxHFlip.TabIndex = 15;
 			this.checkBoxHFlip.Text = "Hori. Flip";
 			this.checkBoxHFlip.UseVisualStyleBackColor = true;
 			this.checkBoxHFlip.CheckStateChanged += new System.EventHandler(this.checkBoxHFlip_CheckStateChanged);
@@ -409,7 +409,7 @@ namespace DB_KAI_RPG
 			this.label8.Location = new System.Drawing.Point(157, 138);
 			this.label8.Name = "label8";
 			this.label8.Size = new System.Drawing.Size(30, 13);
-			this.label8.TabIndex = 15;
+			this.label8.TabIndex = 13;
 			this.label8.Text = "Size:";
 			this.toolTip.SetToolTip(this.label8, "Number of columns on preview and exporting.");
 			// 
@@ -451,7 +451,7 @@ namespace DB_KAI_RPG
             -2147483648});
 			this.numericPosY.Name = "numericPosY";
 			this.numericPosY.Size = new System.Drawing.Size(60, 20);
-			this.numericPosY.TabIndex = 13;
+			this.numericPosY.TabIndex = 12;
 			this.numericPosY.ValueChanged += new System.EventHandler(this.numericPosY_ValueChanged);
 			// 
 			// numericPosX
@@ -482,7 +482,7 @@ namespace DB_KAI_RPG
             0});
 			this.numericTileID.Name = "numericTileID";
 			this.numericTileID.Size = new System.Drawing.Size(91, 20);
-			this.numericTileID.TabIndex = 9;
+			this.numericTileID.TabIndex = 10;
 			this.numericTileID.ValueChanged += new System.EventHandler(this.numericTileID_ValueChanged);
 			// 
 			// label4
@@ -491,7 +491,7 @@ namespace DB_KAI_RPG
 			this.label4.Location = new System.Drawing.Point(160, 85);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(32, 13);
-			this.label4.TabIndex = 8;
+			this.label4.TabIndex = 9;
 			this.label4.Text = "Tiles:";
 			this.toolTip.SetToolTip(this.label4, "Number of columns on preview and exporting.");
 			// 
@@ -501,7 +501,7 @@ namespace DB_KAI_RPG
 			this.labelNumFrames.Location = new System.Drawing.Point(266, 21);
 			this.labelNumFrames.Name = "labelNumFrames";
 			this.labelNumFrames.Size = new System.Drawing.Size(25, 13);
-			this.labelNumFrames.TabIndex = 7;
+			this.labelNumFrames.TabIndex = 5;
 			this.labelNumFrames.Text = "of 0";
 			// 
 			// numericFrame
@@ -514,7 +514,7 @@ namespace DB_KAI_RPG
             0});
 			this.numericFrame.Name = "numericFrame";
 			this.numericFrame.Size = new System.Drawing.Size(60, 20);
-			this.numericFrame.TabIndex = 6;
+			this.numericFrame.TabIndex = 4;
 			this.numericFrame.Value = new decimal(new int[] {
             1,
             0,
@@ -528,7 +528,7 @@ namespace DB_KAI_RPG
 			this.label5.Location = new System.Drawing.Point(157, 21);
 			this.label5.Name = "label5";
 			this.label5.Size = new System.Drawing.Size(39, 13);
-			this.label5.TabIndex = 5;
+			this.label5.TabIndex = 3;
 			this.label5.Text = "Frame:";
 			// 
 			// listLayers
@@ -539,7 +539,7 @@ namespace DB_KAI_RPG
 			this.listLayers.Name = "listLayers";
 			this.listLayers.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
 			this.listLayers.Size = new System.Drawing.Size(142, 186);
-			this.listLayers.TabIndex = 3;
+			this.listLayers.TabIndex = 8;
 			this.listLayers.SelectedIndexChanged += new System.EventHandler(this.listLayers_SelectedIndexChanged);
 			// 
 			// contextMenuLayers
@@ -557,52 +557,71 @@ namespace DB_KAI_RPG
             this.toolStripSeparator3,
             this.manageToolStripMenuItem});
 			this.contextMenuLayers.Name = "contextMenuLayers";
-			this.contextMenuLayers.Size = new System.Drawing.Size(181, 220);
+			this.contextMenuLayers.Size = new System.Drawing.Size(162, 198);
 			// 
 			// deselectToolStripMenuItem
 			// 
 			this.deselectToolStripMenuItem.Name = "deselectToolStripMenuItem";
-			this.deselectToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.deselectToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
 			this.deselectToolStripMenuItem.Text = "Deselect";
 			this.deselectToolStripMenuItem.Click += new System.EventHandler(this.deselectToolStripMenuItem_Click);
 			// 
 			// toolStripSeparator1
 			// 
 			this.toolStripSeparator1.Name = "toolStripSeparator1";
-			this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
+			this.toolStripSeparator1.Size = new System.Drawing.Size(158, 6);
 			// 
 			// cutToolStripMenuItem
 			// 
 			this.cutToolStripMenuItem.Name = "cutToolStripMenuItem";
-			this.cutToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.cutToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
 			this.cutToolStripMenuItem.Text = "Cut";
 			this.cutToolStripMenuItem.Click += new System.EventHandler(this.cutToolStripMenuItem_Click);
 			// 
 			// copyToolStripMenuItem
 			// 
 			this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
-			this.copyToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.copyToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
 			this.copyToolStripMenuItem.Text = "Copy";
 			this.copyToolStripMenuItem.Click += new System.EventHandler(this.copyToolStripMenuItem_Click);
 			// 
 			// pasteBeforeToolStripMenuItem
 			// 
 			this.pasteBeforeToolStripMenuItem.Name = "pasteBeforeToolStripMenuItem";
-			this.pasteBeforeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.pasteBeforeToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
 			this.pasteBeforeToolStripMenuItem.Text = "Paste Before";
 			this.pasteBeforeToolStripMenuItem.Click += new System.EventHandler(this.pasteBeforeToolStripMenuItem_Click);
 			// 
 			// pasteAfterToolStripMenuItem
 			// 
 			this.pasteAfterToolStripMenuItem.Name = "pasteAfterToolStripMenuItem";
-			this.pasteAfterToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.pasteAfterToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
 			this.pasteAfterToolStripMenuItem.Text = "Paste After";
 			this.pasteAfterToolStripMenuItem.Click += new System.EventHandler(this.pasteAfterToolStripMenuItem_Click);
+			// 
+			// toolStripSeparator2
+			// 
+			this.toolStripSeparator2.Name = "toolStripSeparator2";
+			this.toolStripSeparator2.Size = new System.Drawing.Size(158, 6);
+			// 
+			// newBlankLayerToolStripMenuItem
+			// 
+			this.newBlankLayerToolStripMenuItem.Name = "newBlankLayerToolStripMenuItem";
+			this.newBlankLayerToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+			this.newBlankLayerToolStripMenuItem.Text = "New Blank Layer";
+			this.newBlankLayerToolStripMenuItem.Click += new System.EventHandler(this.newBlankLayerToolStripMenuItem_Click);
+			// 
+			// deleteToolStripMenuItem
+			// 
+			this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
+			this.deleteToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+			this.deleteToolStripMenuItem.Text = "Delete Selected";
+			this.deleteToolStripMenuItem.Click += new System.EventHandler(this.deleteToolStripMenuItem_Click);
 			// 
 			// toolStripSeparator3
 			// 
 			this.toolStripSeparator3.Name = "toolStripSeparator3";
-			this.toolStripSeparator3.Size = new System.Drawing.Size(177, 6);
+			this.toolStripSeparator3.Size = new System.Drawing.Size(158, 6);
 			// 
 			// manageToolStripMenuItem
 			// 
@@ -615,15 +634,8 @@ namespace DB_KAI_RPG
             this.newSpriteAfterToolStripMenuItem,
             this.deleteThisSpriteToolStripMenuItem});
 			this.manageToolStripMenuItem.Name = "manageToolStripMenuItem";
-			this.manageToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.manageToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
 			this.manageToolStripMenuItem.Text = "Manage";
-			// 
-			// newFrameAfterToolStripMenuItem
-			// 
-			this.newFrameAfterToolStripMenuItem.Name = "newFrameAfterToolStripMenuItem";
-			this.newFrameAfterToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
-			this.newFrameAfterToolStripMenuItem.Text = "New Frame After";
-			this.newFrameAfterToolStripMenuItem.Click += new System.EventHandler(this.newFrameAfterToolStripMenuItem_Click);
 			// 
 			// newFrameBeforeToolStripMenuItem
 			// 
@@ -631,6 +643,13 @@ namespace DB_KAI_RPG
 			this.newFrameBeforeToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
 			this.newFrameBeforeToolStripMenuItem.Text = "New Frame Before";
 			this.newFrameBeforeToolStripMenuItem.Click += new System.EventHandler(this.newFrameBeforeToolStripMenuItem_Click);
+			// 
+			// newFrameAfterToolStripMenuItem
+			// 
+			this.newFrameAfterToolStripMenuItem.Name = "newFrameAfterToolStripMenuItem";
+			this.newFrameAfterToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
+			this.newFrameAfterToolStripMenuItem.Text = "New Frame After";
+			this.newFrameAfterToolStripMenuItem.Click += new System.EventHandler(this.newFrameAfterToolStripMenuItem_Click);
 			// 
 			// deleteThisFrameToolStripMenuItem
 			// 
@@ -644,19 +663,19 @@ namespace DB_KAI_RPG
 			this.toolStripSeparator4.Name = "toolStripSeparator4";
 			this.toolStripSeparator4.Size = new System.Drawing.Size(168, 6);
 			// 
-			// newSpriteAfterToolStripMenuItem
-			// 
-			this.newSpriteAfterToolStripMenuItem.Name = "newSpriteAfterToolStripMenuItem";
-			this.newSpriteAfterToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
-			this.newSpriteAfterToolStripMenuItem.Text = "New Sprite After";
-			this.newSpriteAfterToolStripMenuItem.Click += new System.EventHandler(this.newSpriteAfterToolStripMenuItem_Click);
-			// 
 			// newSpriteBeforeToolStripMenuItem
 			// 
 			this.newSpriteBeforeToolStripMenuItem.Name = "newSpriteBeforeToolStripMenuItem";
 			this.newSpriteBeforeToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
 			this.newSpriteBeforeToolStripMenuItem.Text = "New Sprite Before";
 			this.newSpriteBeforeToolStripMenuItem.Click += new System.EventHandler(this.newSpriteBeforeToolStripMenuItem_Click);
+			// 
+			// newSpriteAfterToolStripMenuItem
+			// 
+			this.newSpriteAfterToolStripMenuItem.Name = "newSpriteAfterToolStripMenuItem";
+			this.newSpriteAfterToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
+			this.newSpriteAfterToolStripMenuItem.Text = "New Sprite After";
+			this.newSpriteAfterToolStripMenuItem.Click += new System.EventHandler(this.newSpriteAfterToolStripMenuItem_Click);
 			// 
 			// deleteThisSpriteToolStripMenuItem
 			// 
@@ -709,25 +728,6 @@ namespace DB_KAI_RPG
 			this.labelDebug.Size = new System.Drawing.Size(116, 13);
 			this.labelDebug.TabIndex = 3;
 			this.labelDebug.Text = "Uninitialized debug info";
-			// 
-			// deleteToolStripMenuItem
-			// 
-			this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
-			this.deleteToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-			this.deleteToolStripMenuItem.Text = "Delete Selected";
-			this.deleteToolStripMenuItem.Click += new System.EventHandler(this.deleteToolStripMenuItem_Click);
-			// 
-			// newBlankLayerToolStripMenuItem
-			// 
-			this.newBlankLayerToolStripMenuItem.Name = "newBlankLayerToolStripMenuItem";
-			this.newBlankLayerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-			this.newBlankLayerToolStripMenuItem.Text = "New Blank Layer";
-			this.newBlankLayerToolStripMenuItem.Click += new System.EventHandler(this.newBlankLayerToolStripMenuItem_Click);
-			// 
-			// toolStripSeparator2
-			// 
-			this.toolStripSeparator2.Name = "toolStripSeparator2";
-			this.toolStripSeparator2.Size = new System.Drawing.Size(177, 6);
 			// 
 			// CHRControl
 			// 

@@ -73,7 +73,7 @@ namespace DB_KAI_RPG
 			this.buttonImportPal.Location = new System.Drawing.Point(88, 161);
 			this.buttonImportPal.Name = "buttonImportPal";
 			this.buttonImportPal.Size = new System.Drawing.Size(75, 23);
-			this.buttonImportPal.TabIndex = 4;
+			this.buttonImportPal.TabIndex = 1;
 			this.buttonImportPal.Text = "Import";
 			this.buttonImportPal.UseVisualStyleBackColor = true;
 			this.buttonImportPal.Click += new System.EventHandler(this.buttonImportPal_Click);
@@ -83,7 +83,7 @@ namespace DB_KAI_RPG
 			this.buttonExportPal.Location = new System.Drawing.Point(7, 161);
 			this.buttonExportPal.Name = "buttonExportPal";
 			this.buttonExportPal.Size = new System.Drawing.Size(75, 23);
-			this.buttonExportPal.TabIndex = 3;
+			this.buttonExportPal.TabIndex = 0;
 			this.buttonExportPal.Text = "Export";
 			this.buttonExportPal.UseVisualStyleBackColor = true;
 			this.buttonExportPal.Click += new System.EventHandler(this.buttonExportPal_Click);
@@ -115,7 +115,7 @@ namespace DB_KAI_RPG
 			this.label1.Location = new System.Drawing.Point(7, 58);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(158, 65);
-			this.label1.TabIndex = 5;
+			this.label1.TabIndex = 2;
 			this.label1.Text = "Texture import requirements:\r\n\r\nWidth must be multiple of 2.\r\nHeight must be mult" +
     "iple of 2.\r\n256 colors matching the palette.";
 			// 
@@ -124,7 +124,7 @@ namespace DB_KAI_RPG
 			this.buttonImportTexture.Location = new System.Drawing.Point(88, 19);
 			this.buttonImportTexture.Name = "buttonImportTexture";
 			this.buttonImportTexture.Size = new System.Drawing.Size(75, 23);
-			this.buttonImportTexture.TabIndex = 4;
+			this.buttonImportTexture.TabIndex = 1;
 			this.buttonImportTexture.Text = "Import";
 			this.buttonImportTexture.UseVisualStyleBackColor = true;
 			this.buttonImportTexture.Click += new System.EventHandler(this.buttonImportTexture_Click);
@@ -134,7 +134,7 @@ namespace DB_KAI_RPG
 			this.buttonExportTexture.Location = new System.Drawing.Point(7, 19);
 			this.buttonExportTexture.Name = "buttonExportTexture";
 			this.buttonExportTexture.Size = new System.Drawing.Size(75, 23);
-			this.buttonExportTexture.TabIndex = 3;
+			this.buttonExportTexture.TabIndex = 0;
 			this.buttonExportTexture.Text = "Export";
 			this.buttonExportTexture.UseVisualStyleBackColor = true;
 			this.buttonExportTexture.Click += new System.EventHandler(this.buttonExportTexture_Click);
@@ -145,7 +145,7 @@ namespace DB_KAI_RPG
 			this.labelData.Location = new System.Drawing.Point(202, 402);
 			this.labelData.Name = "labelData";
 			this.labelData.Size = new System.Drawing.Size(42, 13);
-			this.labelData.TabIndex = 3;
+			this.labelData.TabIndex = 2;
 			this.labelData.Text = "No Info";
 			// 
 			// IMPControl

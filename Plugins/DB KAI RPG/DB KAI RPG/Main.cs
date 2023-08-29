@@ -56,6 +56,10 @@ namespace DB_KAI_RPG
                 return Format.Pack;
             if (file.name.ToUpper().EndsWith(".MAP"))
                 return Format.Map;
+            if (file.name.ToUpper().EndsWith(".A"))
+                return Format.Pack;
+            if (file.name.ToUpper().EndsWith(".BST"))
+                return Format.Animation;
 
             return Format.Unknown;
         }
@@ -87,6 +91,16 @@ namespace DB_KAI_RPG
                 MAP dMAP = new MAP(file.path, file.id, file.name);
                 pluginHost.Set_Object(dMAP);
             }
+            else if (file.name.ToUpper().EndsWith(".A"))
+            {
+                A_CHR dA = new A_CHR(file.path, file.id, file.name);
+                pluginHost.Set_Object(dA);
+            }
+            else if (file.name.ToUpper().EndsWith(".BST"))
+            {
+                BST dBST = new BST(file.path, file.id, file.name);
+                pluginHost.Set_Object(dBST);
+            }
         }
         public Control Show_Info(sFile file)
         {
@@ -102,6 +116,10 @@ namespace DB_KAI_RPG
                 return new IMAControl(pluginHost, new IMA(file.path, file.id, file.name));
             else if (file.name.ToUpper().EndsWith(".MAP"))
                 return new MAPControl(pluginHost, new MAP(file.path, file.id, file.name));
+            else if (file.name.ToUpper().EndsWith(".A"))
+                return new A_CHRControl(pluginHost, new A_CHR(file.path, file.id, file.name));
+            else if (file.name.ToUpper().EndsWith(".BST"))
+                return new BSTControl(pluginHost, new BST(file.path, file.id, file.name));
 
             return new Control();
         }

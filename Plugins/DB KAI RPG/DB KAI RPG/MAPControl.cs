@@ -162,7 +162,7 @@ namespace DB_KAI_RPG
             SaveFileDialog o = new SaveFileDialog();
             o.AddExtension = true;
             o.CheckPathExists = true;
-            o.DefaultExt = ".pal";
+            o.DefaultExt = ".png";
             o.Filter = "Portable Network Graphics (*.png)|*.png";
             o.OverwritePrompt = true;
             o.FileName = Path.ChangeExtension(Path.ChangeExtension(dMAP.FileName, null) + "_image", ".png");
@@ -178,7 +178,7 @@ namespace DB_KAI_RPG
             SaveFileDialog o = new SaveFileDialog();
             o.AddExtension = true;
             o.CheckPathExists = true;
-            o.DefaultExt = ".pal";
+            o.DefaultExt = ".png";
             o.Filter = "Portable Network Graphics (*.png)|*.png";
             o.OverwritePrompt = true;
             o.FileName = Path.ChangeExtension(Path.ChangeExtension(dMAP.FileName, null) + "_mask", ".png");
