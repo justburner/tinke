@@ -58,6 +58,63 @@ namespace DB_KAI_RPG
 
         #region [ Character Data ]
 
+        public class ExMeta
+		{
+            public byte ctrl;
+            public byte metx;
+            public byte mety;
+
+            public int ID
+            {
+                get { return ctrl & 15; }
+                set { ctrl = (byte)((ctrl & 0xF0) | (value & 15)); }
+            }
+
+            public int X
+            {
+                get { return (ctrl & 0x20) != 0 ? -metx : metx; }
+                set {
+                    metx = (byte)Math.Abs(value);
+                    if (value >= 0)
+                        ctrl &= 0xDF;
+                    else
+                        ctrl |= 0x20;
+                }
+            }
+
+            public int Y
+            {
+                get { return (ctrl & 0x80) != 0 ? -mety : mety; }
+                set
+                {
+                    mety = (byte)Math.Abs(value);
+                    if (value >= 0)
+                        ctrl &= 0x7F;
+                    else
+                        ctrl |= 0x80;
+                }
+            }
+
+            public static ExMeta Blank()
+            {
+                return new ExMeta();
+            }
+
+            public ExMeta Clone()
+			{
+                ExMeta exmeta = new ExMeta();
+                exmeta.ctrl = ctrl;
+                exmeta.metx = metx;
+                exmeta.mety = mety;
+                return exmeta;
+            }
+
+            public override string ToString()
+            {
+                return string.Format("{0:X02}: {1},{2}", ctrl & 15, X, Y);
+            }
+        }
+
         public class Layer
         {
             public int x;
@@ -77,8 +134,7 @@ namespace DB_KAI_RPG
 
             public static Layer Blank()
             {
-                Layer layer = new Layer();
-                return layer;
+                return new Layer();
             }
 
             public Layer Clone()
@@ -145,16 +201,14 @@ namespace DB_KAI_RPG
             public List<Layer> layers;
             public ushort ticks;
 
-            public byte extrasize;
-            public byte[] extradata;
+            public List<ExMeta> exmetas;
 
             public static Frame Blank()
             {
                 Frame frame = new Frame();
                 frame.layers = new List<Layer>();
                 frame.ticks = 0;
-                frame.extrasize = 0;
-                frame.extradata = new byte[2];
+                frame.exmetas = new List<ExMeta>();
 
                 Layer layer = new Layer();
                 frame.layers.Add(layer);
@@ -169,8 +223,9 @@ namespace DB_KAI_RPG
                 foreach (var layer in layers)
                     frame.layers.Add(layer.Clone());
                 frame.ticks = ticks;
-                frame.extrasize = extrasize;
-                frame.extradata = extradata.ToArray();
+                frame.exmetas = new List<ExMeta>();
+                foreach (var exmeta in exmetas)
+                    frame.exmetas.Add(exmeta.Clone());
 
                 return frame;
             }
@@ -381,7 +436,7 @@ namespace DB_KAI_RPG
                             layer.hflip = (halfwd1 & 0x1000) != 0;
                             layer.translucent = (halfwd0 & 0x0400) != 0;
 
-                            //if ((halfwd0 & 0x3800) != 0) throw new FormatException("Unexpected flags");
+                            if ((halfwd0 & 0x3800) != 0) throw new FormatException("Unexpected flags");
 
                             frame.layers.Add(layer);
                         }
@@ -412,14 +467,22 @@ namespace DB_KAI_RPG
                         }
                     }
                     long extrabegin = br.BaseStream.Position;
-                    frame.extrasize = br.ReadByte();
-                    long extraend = (extrabegin + frame.extrasize * 3 + 2) & ~1; // weird...
-                    int exbytes = (int)(extraend - extrabegin - 1);
 
-                    frame.extradata = br.ReadBytes(exbytes);
+                    int exmetaSize = br.ReadByte();
+                    frame.exmetas = new List<ExMeta>();
+                    for (int j = 0; j < exmetaSize; j++)
+                    {
+                        ExMeta exmeta = new ExMeta();
+                        exmeta.ctrl = br.ReadByte();
+                        exmeta.metx = br.ReadByte();
+                        exmeta.mety = br.ReadByte();
+                        frame.exmetas.Add(exmeta);
+                    }
 
-                    if (frame.extradata.Length != exbytes)
-                        throw new FormatException("Extradata does not match");
+                    // Read weird padding
+                    long extraend = (extrabegin + exmetaSize * 3 + 2) & ~1;
+                    int padding = (int)(extraend - extrabegin - exmetaSize * 3 - 1);
+                    br.ReadBytes(padding);
 
                     sprite.frames.Add(frame);
                 }
@@ -479,6 +542,8 @@ namespace DB_KAI_RPG
                             extended = true;
                         if (frame.ticks >= 256)
                             extended = true;
+                        if (frame.exmetas.Count != 0)
+                            extended = true;
                         for (int j = 0; j < numLayers; j++)
                         {
                             Layer layer = frame.layers[j];
@@ -529,13 +594,21 @@ namespace DB_KAI_RPG
                         }
 
                         long extrabegin = bw.BaseStream.Position;
-                        bw.Write(frame.extrasize);
-                        long extraend = (extrabegin + frame.extrasize * 3 + 2) & ~1; // weird...
-                        int exbytes = (int)(extraend - extrabegin - 1);
 
-                        byte[] extradata = frame.extradata;
-                        Array.Resize(ref extradata, exbytes);
-                        bw.Write(extradata);
+                        int exmetaSize = frame.exmetas.Count;
+                        bw.Write((byte)exmetaSize);
+                        foreach (var exmeta in frame.exmetas)
+                        {
+                            bw.Write(exmeta.ctrl);
+                            bw.Write(exmeta.metx);
+                            bw.Write(exmeta.mety);
+                        }
+
+                        // Add weird pad
+                        long extraend = (extrabegin + exmetaSize * 3 + 2) & ~1; // weird...
+                        int padding = (int)(extraend - extrabegin - exmetaSize * 3 - 1);
+
+                        for (int j = 0; j< padding; j++) bw.Write((byte)0);
                     }
 
                     bw.Write((byte)0);

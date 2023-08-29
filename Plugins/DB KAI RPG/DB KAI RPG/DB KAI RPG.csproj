@@ -68,6 +68,12 @@
       <DependentUpon>BSTLayerCode.cs</DependentUpon>
     </Compile>
     <Compile Include="CHR.cs" />
+    <Compile Include="CHRAnimator.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CHRAnimator.Designer.cs">
+      <DependentUpon>CHRAnimator.cs</DependentUpon>
+    </Compile>
     <Compile Include="IMA.cs" />
     <Compile Include="IMAControl.cs">
       <SubType>UserControl</SubType>
@@ -116,6 +122,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="BSTLayerCode.resx">
       <DependentUpon>BSTLayerCode.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CHRAnimator.resx">
+      <DependentUpon>CHRAnimator.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="IMAControl.resx">
       <DependentUpon>IMAControl.cs</DependentUpon>

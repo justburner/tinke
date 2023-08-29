@@ -37,11 +37,12 @@ namespace DB_KAI_RPG
     {
         IPluginHost pluginHost;
         CHR dCHR;
+
         bool blockSignals;
-        bool dirty;
+
         int currSprite;
         int currFrame;
-        static List<CHR.Layer> clipboardLayers = new List<CHR.Layer>();
+        int playFrame;
 
         public CHRControl()
         {
@@ -57,10 +58,8 @@ namespace DB_KAI_RPG
 
             Update_Palette();
             Update_Tileset();
-            Update_Animation(true);
-
-            dirty = false;
-            Update_Dirty(false);
+            Update_List(true);
+            Update_Animation();
         }
 
         private void Write_File()
@@ -101,7 +100,57 @@ namespace DB_KAI_RPG
                 pictureTileset.Image = null;
         }
 
-        public void Update_Animation(bool relistLayers)
+        public void Update_Animation()
+		{
+            Size size = pictureSprite.ClientSize;
+            Bitmap bmp = new Bitmap(size.Width, size.Height);
+            Graphics g = Graphics.FromImage(bmp);
+            int centerX = bmp.Width / 2;
+            int centerY = bmp.Height * 3 / 4;
+
+            Pen axisPen = new Pen(Color.FromArgb(128, 0, 0, 0));
+            g.DrawLine(axisPen, 0, centerY, bmp.Width, centerY);
+            g.DrawLine(axisPen, centerX, 0, centerX, bmp.Height);
+
+            if (pictureSprite.Image != null) pictureSprite.Image.Dispose();
+            pictureSprite.Image = bmp;
+
+            g.Dispose();
+
+            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
+            int paletteSlot = (int)numericPalette.Value;
+
+            if (checkBoxPlay.Checked)
+            {
+                if (playFrame >= chrSprite.frames.Count)
+                    playFrame = 0;
+
+                CHR.Frame chrFrame = chrSprite.frames[playFrame];
+
+                for (int i = chrFrame.layers.Count - 1; i >= 0; i--)
+                {
+                    CHR.Layer chrPart = chrFrame.layers[i];
+                    dCHR.DrawLayer(bmp, centerX, centerY, ref chrPart, paletteSlot);
+                }
+            }
+            else
+            {
+                if (currFrame >= chrSprite.frames.Count)
+                    currFrame = 0;
+
+                CHR.Frame chrFrame = chrSprite.frames[currFrame];
+
+                for (int i = chrFrame.layers.Count - 1; i >= 0; i--)
+                {
+                    CHR.Layer chrPart = chrFrame.layers[i];
+                    dCHR.DrawLayer(bmp, centerX, centerY, ref chrPart, paletteSlot);
+                }
+            }
+
+            pictureSprite.Update();
+        }
+
+        public void Update_List(bool relistLayers)
         {
             groupSprite.Visible = (dCHR.sprites.Count > 0);
             pictureSprite.Visible = (dCHR.sprites.Count > 0);
@@ -116,17 +165,6 @@ namespace DB_KAI_RPG
 
             int paletteSlot = (int)numericPalette.Value;
 
-            Bitmap bmp = new Bitmap(pictureSprite.Width, pictureSprite.Height);
-            Graphics g = Graphics.FromImage(bmp);
-            int centerX = bmp.Width / 2;
-            int centerY = bmp.Height * 3 / 4;
-
-            Pen axisPen = new Pen(Color.FromArgb(128, 0, 0, 0));
-            g.DrawLine(axisPen, 0, centerY, bmp.Width, centerY);
-            g.DrawLine(axisPen, centerX, 0, centerX, bmp.Height);
-            pictureSprite.Image = bmp;
-            g.Dispose();
-
             currSprite = (int)numericSprite.Value - 1;
             if (currSprite >= dCHR.sprites.Count)
                 currSprite = 0;
@@ -140,124 +178,16 @@ namespace DB_KAI_RPG
                 currFrame = 0;
             CHR.Frame chrFrame = chrSprite.frames[currFrame];
 
-            numericFrameTicks.Value = chrFrame.ticks;
-
-            // List all layers
-            if (relistLayers)
-            {
-                listLayers.Items.Clear();
-                listLayers.ClearSelected();
-                for (int i = 0; i < chrFrame.layers.Count; i++)
-                {
-                    CHR.Layer chrPart = chrFrame.layers[i];
-                    listLayers.Items.Add(chrPart.ToString());
-                }
-            }
-            else
-            {
-                for (int i = 0; i < listLayers.Items.Count; i++)
-                {
-                    CHR.Layer chrPart = chrFrame.layers[i];
-                    bool selected = listLayers.GetSelected(i);
-                    listLayers.Items[i] = chrPart.ToString();
-                    listLayers.SetSelected(i, selected);
-                }
-            }
-
-            // Setup layer components
-            var indices = listLayers.SelectedIndices;
-            if (indices.Count == 0)
-            {
-                numericTileID.Enabled = false;
-                numericPosX.Enabled = false;
-                numericPosY.Enabled = false;
-                comboBoxObjSize.Enabled = false;
-                numericTileID.Value = 0;
-                numericPosX.Value = 0;
-                numericPosY.Value = 0;
-                comboBoxObjSize.SelectedIndex = 0;
-
-                checkBoxHFlip.Enabled = false;
-                checkBoxVFlip.Enabled = false;
-                checkBoxTranslucent.Enabled = false;
-                checkBoxHFlip.Checked = false;
-                checkBoxVFlip.Checked = false;
-                checkBoxTranslucent.Checked = false;
-            }
-            else if (indices.Count == 1)
-            {
-                CHR.Layer chrPart = chrFrame.layers[listLayers.SelectedIndex];
-                numericTileID.Enabled = true;
-                numericPosX.Enabled = true;
-                numericPosY.Enabled = true;
-                comboBoxObjSize.Enabled = true;
-                numericTileID.Value = chrPart.tile;
-                numericPosX.Value = chrPart.x;
-                numericPosY.Value = chrPart.y;
-                comboBoxObjSize.SelectedIndex = chrPart.objsize;
-
-                checkBoxHFlip.Enabled = true;
-                checkBoxVFlip.Enabled = true;
-                checkBoxTranslucent.Enabled = true;
-                checkBoxHFlip.Checked = chrPart.hflip;
-                checkBoxVFlip.Checked = chrPart.vflip;
-                checkBoxTranslucent.Checked = chrPart.translucent;
-            }
-            else
-            {
-                numericTileID.Enabled = true;
-                numericPosX.Enabled = true;
-                numericPosY.Enabled = true;
-                comboBoxObjSize.Enabled = true;
-                numericPosX.Value = 0;
-                numericPosY.Value = 0;
-                comboBoxObjSize.SelectedIndex = -1;
-
-                checkBoxHFlip.Enabled = true;
-                checkBoxVFlip.Enabled = true;
-                checkBoxTranslucent.Enabled = true;
-            }
-
-            // Render last to first, non selected to selected
-            if (listLayers.SelectedIndex != -1)
-            {
-                for (int i = chrFrame.layers.Count - 1; i >= 0; i--)
-                {
-                    bool selected = listLayers.GetSelected(i);
-                    if (!selected)
-                    {
-                        CHR.Layer chrPart = chrFrame.layers[i];
-                        dCHR.DrawLayer(bmp, centerX, centerY, ref chrPart, paletteSlot, false);
-                    }
-                }
-            }
-            for (int i = chrFrame.layers.Count - 1; i >= 0; i--)
-            {
-                bool selected = listLayers.GetSelected(i) || listLayers.SelectedIndex == -1;
-                if (selected)
-                {
-                    CHR.Layer chrPart = chrFrame.layers[i];
-                    dCHR.DrawLayer(bmp, centerX, centerY, ref chrPart, paletteSlot, true);
-                }
-            }
-
             blockSignals = false;
-
-            pictureSprite.Update();
-        }
-
-        private void Update_Dirty(bool setDirty)
-        {
-            if (setDirty) dirty = true;
-            buttonSave.Enabled = dirty;
-            buttonRevert.Enabled = dirty;
         }
 
         private void numericPalette_ValueChanged(object sender, EventArgs e)
         {
             Update_Palette();
             Update_Tileset();
-            Update_Animation(false);
+            Update_List(false);
+            Update_Animation();
+
         }
 
         private void numericPreviewWidth_ValueChanged(object sender, EventArgs e)
@@ -268,17 +198,16 @@ namespace DB_KAI_RPG
         private void numericSprite_ValueChanged(object sender, EventArgs e)
         {
             numericFrame.Value = 1;
-            Update_Animation(true);
+
+            SetupTimer();
+            Update_List(true);
+            Update_Animation();
         }
 
         private void numericFrame_ValueChanged(object sender, EventArgs e)
         {
-            Update_Animation(true);
-        }
-
-        private void listLayers_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!blockSignals) Update_Animation(false);
+            Update_List(true);
+            Update_Animation();
         }
 
         private void buttonExportPal_Click(object sender, EventArgs e)
@@ -313,7 +242,8 @@ namespace DB_KAI_RPG
 
             Update_Palette();
             Update_Tileset();
-            Update_Animation(false);
+            Update_List(false);
+            Update_Animation();
         }
 
         private void buttonExportTiles_Click(object sender, EventArgs e)
@@ -357,7 +287,8 @@ namespace DB_KAI_RPG
             Write_File();
 
             Update_Tileset();
-            Update_Animation(false);
+            Update_List(false);
+            Update_Animation();
         }
 
         private void checkMaxTiles_CheckedChanged(object sender, EventArgs e)
@@ -365,198 +296,13 @@ namespace DB_KAI_RPG
             numericMaxTiles.Enabled = checkMaxTiles.Checked;
         }
 
-        private void numericFrameTicks_ValueChanged(object sender, EventArgs e)
-        {
-            if (blockSignals) return;
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-
-            chrFrame.ticks = (ushort)numericFrameTicks.Value;
-            Update_Dirty(true);
-        }
-
-        private void numericTileID_ValueChanged(object sender, EventArgs e)
-        {
-            if (blockSignals) return;
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-
-            for (int i = chrFrame.layers.Count - 1; i >= 0; i--)
-            {
-                if (listLayers.GetSelected(i))
-                {
-                    CHR.Layer chrPart = chrFrame.layers[i];
-                    chrPart.tile = (ushort)numericTileID.Value;
-                }
-            }
-
-            Update_Animation(false);
-            Update_Dirty(true);
-        }
-
-        private void numericPosX_ValueChanged(object sender, EventArgs e)
-        {
-            if (blockSignals) return;
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-
-            var indices = listLayers.SelectedIndices;
-            if (indices.Count == 1)
-            {
-                CHR.Layer chrPart = chrFrame.layers[indices[0]];
-                chrPart.x = (int)numericPosX.Value;
-            }
-            else
-            {
-                foreach (int index in indices)
-                {
-                    CHR.Layer chrPart = chrFrame.layers[index];
-                    chrPart.x += (int)numericPosX.Value;
-                }
-                blockSignals = true;
-                numericPosX.Value = 0;
-                blockSignals = false;
-            }
-
-            Update_Animation(false);
-            Update_Dirty(true);
-        }
-
-        private void numericPosY_ValueChanged(object sender, EventArgs e)
-        {
-            if (blockSignals) return;
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-
-            var indices = listLayers.SelectedIndices;
-            if (indices.Count == 1)
-            {
-                CHR.Layer chrPart = chrFrame.layers[indices[0]];
-                chrPart.y = (int)numericPosY.Value;
-            }
-            else
-            {
-                foreach (int index in indices)
-                {
-                    CHR.Layer chrPart = chrFrame.layers[index];
-                    chrPart.y += (int)numericPosY.Value;
-                }
-                blockSignals = true;
-                numericPosY.Value = 0;
-                blockSignals = false;
-            }
-
-            Update_Animation(false);
-            Update_Dirty(true);
-        }
-
-        private void comboBoxObjSize_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (blockSignals) return;
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-
-            var indices = listLayers.SelectedIndices;
-            if (indices.Count == 1)
-            {
-                CHR.Layer chrPart = chrFrame.layers[indices[0]];
-                chrPart.objsize = comboBoxObjSize.SelectedIndex;
-            }
-            else
-            {
-                foreach (int index in indices)
-                {
-                    CHR.Layer chrPart = chrFrame.layers[index];
-                    chrPart.objsize = comboBoxObjSize.SelectedIndex;
-                }
-            }
-
-            Update_Animation(false);
-            Update_Dirty(true);
-        }
-
-        private void checkBoxHFlip_CheckStateChanged(object sender, EventArgs e)
-        {
-            if (blockSignals) return;
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-
-            var indices = listLayers.SelectedIndices;
-            if (indices.Count == 1)
-            {
-                CHR.Layer chrPart = chrFrame.layers[indices[0]];
-                chrPart.hflip = checkBoxHFlip.Checked;
-            }
-            else
-            {
-                foreach (int index in indices)
-                {
-                    CHR.Layer chrPart = chrFrame.layers[index];
-                    chrPart.hflip = checkBoxHFlip.Checked;
-                }
-            }
-
-            Update_Animation(false);
-            Update_Dirty(true);
-        }
-
-        private void checkBoxVFlip_CheckStateChanged(object sender, EventArgs e)
-        {
-            if (blockSignals) return;
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-
-            var indices = listLayers.SelectedIndices;
-            if (indices.Count == 1)
-            {
-                CHR.Layer chrPart = chrFrame.layers[indices[0]];
-                chrPart.vflip = checkBoxVFlip.Checked;
-            }
-            else
-            {
-                foreach (int index in indices)
-                {
-                    CHR.Layer chrPart = chrFrame.layers[index];
-                    chrPart.vflip = checkBoxVFlip.Checked;
-                }
-            }
-
-            Update_Animation(false);
-            Update_Dirty(true);
-        }
-
-        private void checkBoxTranslucent_CheckStateChanged(object sender, EventArgs e)
-        {
-            if (blockSignals) return;
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-
-            var indices = listLayers.SelectedIndices;
-            if (indices.Count == 1)
-            {
-                CHR.Layer chrPart = chrFrame.layers[indices[0]];
-                chrPart.translucent = checkBoxTranslucent.Checked;
-            }
-            else
-            {
-                foreach (int index in indices)
-                {
-                    CHR.Layer chrPart = chrFrame.layers[index];
-                    chrPart.translucent = checkBoxTranslucent.Checked;
-                }
-            }
-
-            Update_Animation(false);
-            Update_Dirty(true);
-        }
-
-        private void buttonSave_Click(object sender, EventArgs e)
-        {
+        private bool CheckAnimation()
+		{
             // Avoid empty objects
             if (dCHR.sprites.Count == 0)
             {
                 MessageBox.Show("Atleast 1 sprite is required.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                return false;
             }
             for (int s = 0; s < dCHR.sprites.Count; s++)
             {
@@ -564,7 +310,7 @@ namespace DB_KAI_RPG
                 if (sprite.frames.Count == 0)
                 {
                     MessageBox.Show(string.Format("Atleast 1 frame is required in sprite {0}.", s), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    return false;
                 }
                 for (int f = 0; f < sprite.frames.Count; f++)
                 {
@@ -572,240 +318,63 @@ namespace DB_KAI_RPG
                     if (frame.layers.Count == 0)
                     {
                         MessageBox.Show(string.Format("Atleast 1 layer is required in sprite {0} frame {1}.", s, f), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
+                        return false;
                     }
                 }
             }
-
-            // Write file
-            dCHR.EncodeCharacterData();
-            Write_File();
-
-            dirty = false;
-            Update_Dirty(false);
+            return true;
         }
 
-        private void buttonRevert_Click(object sender, EventArgs e)
-        {
+        private void buttonEditor_Click(object sender, EventArgs e)
+		{
+            CHRAnimator animator = new CHRAnimator(dCHR);
+
+            timerPlayer.Enabled = false;
+            if (animator.RunDialog() == DialogResult.OK)
+			{
+                if (CheckAnimation())
+				{
+                    // Encode and Write file
+                    dCHR.EncodeCharacterData();
+                    Write_File();
+                }
+            }
+
+            // Restore character data
             dCHR.DecodeCharacterData();
-
-            numericSprite.Value = 1;
-            numericFrame.Value = 1;
-            Update_Animation(true);
-
-            dirty = false;
-            Update_Dirty(false);
+            timerPlayer.Enabled = checkBoxPlay.Checked;
         }
 
-        private void deselectToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            listLayers.ClearSelected();
-        }
-
-        private void cutToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-            var indices = listLayers.SelectedIndices;
-            if (indices.Count == 0) return;
-
-            clipboardLayers.Clear();
-            foreach (int index in indices)
-            {
-                CHR.Layer chrPart = chrFrame.layers[index];
-                clipboardLayers.Add(chrPart.Clone());
-            }
-            foreach (var layer in clipboardLayers)
-            {
-                chrFrame.layers.Remove(layer);
-            }
-
-            Update_Animation(true);
-            Update_Dirty(true);
-        }
-
-        private void copyToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-            var indices = listLayers.SelectedIndices;
-            if (indices.Count == 0) return;
-
-            clipboardLayers.Clear();
-            foreach (int index in indices)
-            {
-                CHR.Layer chrPart = chrFrame.layers[index];
-                clipboardLayers.Add(chrPart.Clone());
-            }
-        }
-
-        private void pasteBeforeToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-            var indices = listLayers.SelectedIndices;
-
-            if (indices.Count == 0)
-            {
-                int index = 0;
-                foreach (var layer in clipboardLayers)
-                {
-                    chrFrame.layers.Insert(index++, layer.Clone());
-                }
-            }
-            else
-            {
-                int index = indices[0];
-                foreach (var layer in clipboardLayers)
-                {
-                    chrFrame.layers.Insert(index++, layer);
-                }
-            }
-
-            Update_Animation(true);
-            Update_Dirty(true);
-        }
-
-        private void pasteAfterToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-            var indices = listLayers.SelectedIndices;
-
-            if (indices.Count == 0)
-            {
-                foreach (var layer in clipboardLayers)
-                {
-                    chrFrame.layers.Add(layer.Clone());
-                }
-            }
-            else
-            {
-                int index = indices[indices.Count - 1] + 1;
-                foreach (var layer in clipboardLayers)
-                {
-                    chrFrame.layers.Insert(index++, layer);
-                }
-            }
-
-            Update_Animation(true);
-            Update_Dirty(true);
-        }
-
-        private void newBlankLayerToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-            var indices = listLayers.SelectedIndices;
-
-            if (indices.Count == 0)
-            {
-                chrFrame.layers.Add(CHR.Layer.Blank());
-            }
-            else
-            {
-                int index = indices[indices.Count - 1] + 1;
-                chrFrame.layers.Insert(index, CHR.Layer.Blank());
-            }
-
-            Update_Animation(true);
-            Update_Dirty(true);
-        }
-
-        private void deleteToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-            var indices = listLayers.SelectedIndices;
-            if (indices.Count == 0) return;
-
-            List<CHR.Layer> layers = new List<CHR.Layer>();
-            foreach (int index in indices)
-            {
-                CHR.Layer chrPart = chrFrame.layers[index];
-                layers.Add(chrPart);
-            }
-            foreach (var layer in layers)
-            {
-                chrFrame.layers.Remove(layer);
-            }
-
-            Update_Animation(true);
-            Update_Dirty(true);
-        }
-
-        private void newFrameBeforeToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-
-            chrSprite.frames.Insert(currFrame, chrFrame.Clone());
-
-            Update_Animation(true);
-            Update_Dirty(true);
-        }
-
-        private void newFrameAfterToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
-            CHR.Frame chrFrame = chrSprite.frames[currFrame];
-
-            chrSprite.frames.Insert(currFrame + 1, chrFrame.Clone());
-
-            Update_Animation(true);
-            Update_Dirty(true);
-
-            numericFrame.Value++;
-        }
-
-        private void deleteThisFrameToolStripMenuItem_Click(object sender, EventArgs e)
+        public void SetupTimer()
         {
             CHR.Sprite chrSprite = dCHR.sprites[currSprite];
 
-            if (chrSprite.frames.Count <= 1)
-            {
-                MessageBox.Show("Cannot delete last frame!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            chrSprite.frames.RemoveAt(currFrame);
+            // Increment frame
+            if (playFrame >= chrSprite.frames.Count)
+                playFrame = 0;
+            CHR.Frame chrFrame = chrSprite.frames[playFrame];
 
-            Update_Animation(true);
-            Update_Dirty(true);
+            // Set interval for next frame
+            int ticks = Math.Max((int)chrFrame.ticks, 1);
+            timerPlayer.Interval = (ticks * 1000) / 60;
         }
 
-        private void newSpriteBeforeToolStripMenuItem_Click(object sender, EventArgs e)
+        private void checkBoxPlay_CheckedChanged(object sender, EventArgs e)
         {
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
+            playFrame = currFrame;
+            SetupTimer();
 
-            dCHR.sprites.Insert(currSprite, chrSprite.Clone());
-
-            Update_Animation(true);
-            Update_Dirty(true);
+            Update_Animation();
+            timerPlayer.Enabled = checkBoxPlay.Checked;
+            numericFrame.Enabled = !checkBoxPlay.Checked;
         }
 
-        private void newSpriteAfterToolStripMenuItem_Click(object sender, EventArgs e)
+        private void timerPlayer_Tick(object sender, EventArgs e)
         {
-            CHR.Sprite chrSprite = dCHR.sprites[currSprite];
+            playFrame++;
+            SetupTimer();
 
-            dCHR.sprites.Insert(currSprite + 1, chrSprite.Clone());
-
-            Update_Animation(true);
-            Update_Dirty(true);
-
-            numericSprite.Value++;
-        }
-
-        private void deleteThisSpriteToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (dCHR.sprites.Count <= 1)
-            {
-                MessageBox.Show("Cannot delete last sprite!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            dCHR.sprites.RemoveAt(currSprite);
-
-            Update_Animation(true);
-            Update_Dirty(true);
+            Update_Animation();
         }
     }
 }
